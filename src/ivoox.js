@@ -1,5 +1,6 @@
 import axios from "axios";
 import jsdom from "jsdom";
+import https from "https";
 
 const reDate = /^(\d{2}):(\d{2}) - (\d{2}) de (\w{3})\. de (\d{4})$/;
 const months = ["ene", "feb", "mar", "abr", "may", "jun",
@@ -46,8 +47,6 @@ async function getEpisodes(url, date, requestWait = 2000, next = false) {
     date = new Date(Date.now() - (date * 24 * 60 * 60 * 1000));
   }
   const episodes = [];
-
-  const https = require('https');
 
   const agent = new https.Agent({
     keepAlive: true
