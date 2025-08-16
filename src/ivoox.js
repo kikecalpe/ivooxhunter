@@ -41,47 +41,33 @@ function parseIvoox(document) {
   return parsed;
 }
 
-async function getEpisodes(url, date, requestWait = 2000, next = false) {
-  if (!next) url = page(1, url);
-  if (typeof date === "number") {
-    date = new Date(Date.now() - (date * 24 * 60 * 60 * 1000));
+async function getEpisodes(url, date) {
+  try {
+    const response = await axios.get(url, {
+      timeout: 20000, // máximo 20 segundos
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+        "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
+      },
+    });
+
+    const dom = new jsdom.JSDOM(response.data);
+    const document = dom.window.document;
+
+    // usamos tu parser
+    const pageEpisodes = parseIvoox(document);
+
+    // filtramos por fecha
+    const filteredEpisodes = pageEpisodes.filter(
+      (episode) => episode.date > date
+    );
+
+    return filteredEpisodes;
+  } catch (error) {
+    console.error("Error al consultar Ivoox:", error.message);
+    return [];
   }
-  const episodes = [];
-
-  const agent = new https.Agent({
-    keepAlive: true
-  });
-
-  const response = await axios.get(url, {
-    timeout: 20000,
-    httpsAgent: agent,
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-      'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8'
-    }
-  });
-
-  const dom = new jsdom.JSDOM(response.data);
-  const pageEpisodes = parseIvoox(dom.window.document);
-  const filteredEpisodes = pageEpisodes.filter(episode => episode.date > date);
-
-  if (pageEpisodes.some(ep => ep.date <= date)) {
-    // Guardamos los episodios filtrados de esta página
-    Array.prototype.push.apply(episodes, filteredEpisodes);
-    // Cortamos la recursión
-    return episodes;
-  }
-
-
-  Array.prototype.push.apply(episodes, filteredEpisodes);
-  
-  if (pageEpisodes.length === filteredEpisodes.length) {
-    await new Promise(resolve => setTimeout(resolve, requestWait));
-    Array.prototype.push.apply(episodes, await getEpisodes(page("next", url), date, requestWait, true));
-  }
-  
-  return episodes;
 }
 
 export default { getEpisodes };
