@@ -1,3 +1,4 @@
+import axios from "axios";
 import jsdom from "jsdom";
 import https from "https";
 
@@ -51,42 +52,27 @@ async function getEpisodes(url, date, requestWait = 2000, next = false) {
     keepAlive: true
   });
 
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 60000);
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8'
-      },
-      agent: agent,
-      signal: controller.signal
-    });
-
-    clearTimeout(timeout);
-
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-    const html = await response.text();
-    const dom = new jsdom.JSDOM(html);
-    const pageEpisodes = parseIvoox(dom.window.document);
-    const filteredEpisodes = pageEpisodes.filter(episode => episode.date > date);
-
-    episodes.push(...filteredEpisodes);
-
-    if (pageEpisodes.length === filteredEpisodes.length) {
-      await new Promise(resolve => setTimeout(resolve, requestWait));
-      const nextEpisodes = await getEpisodes(page("next", url), date, requestWait, true);
-      episodes.push(...nextEpisodes);
+  const response = await axios.get(url, {
+    timeout: 20000,
+    httpsAgent: agent,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8'
     }
+  });
 
-  } catch (err) {
-    console.error('Error al consultar Ivoox:', err);
+  const dom = new jsdom.JSDOM(response.data);
+  const pageEpisodes = parseIvoox(dom.window.document);
+  const filteredEpisodes = pageEpisodes.filter(episode => episode.date > date);
+  
+  Array.prototype.push.apply(episodes, filteredEpisodes);
+  
+  if (pageEpisodes.length === filteredEpisodes.length) {
+    await new Promise(resolve => setTimeout(resolve, requestWait));
+    Array.prototype.push.apply(episodes, await getEpisodes(page("next", url), date, requestWait, true));
   }
-
+  
   return episodes;
 }
 
