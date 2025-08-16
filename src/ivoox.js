@@ -65,7 +65,15 @@ async function getEpisodes(url, date, requestWait = 2000, next = false) {
   const dom = new jsdom.JSDOM(response.data);
   const pageEpisodes = parseIvoox(dom.window.document);
   const filteredEpisodes = pageEpisodes.filter(episode => episode.date > date);
-  
+
+  if (pageEpisodes.some(ep => ep.date <= date)) {
+    // Guardamos los episodios filtrados de esta página
+    Array.prototype.push.apply(episodes, filteredEpisodes);
+    // Cortamos la recursión
+    return episodes;
+  }
+
+
   Array.prototype.push.apply(episodes, filteredEpisodes);
   
   if (pageEpisodes.length === filteredEpisodes.length) {
