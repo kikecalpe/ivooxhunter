@@ -148,29 +148,44 @@ for (const episode of episodes) {
   }
 }
 
-// Ask episodes to download
+// Ask episodes to download (loop until valid or cancel)
+let selectedEpisodes = [];
 
-const { episodesDownloadStr } = await prompt.get({
-  properties: {
-    episodesDownloadStr: {
-      description: "\n¿Que episodios quieres descargar?, usa espacios para separarlos:",
-      type: "string"
+while (true) {
+  const { episodesDownloadStr } = await prompt.get({
+    properties: {
+      episodesDownloadStr: {
+        description: "\n¿Que episodios quieres descargar? (usa espacios) — 0 para cancelar:",
+        type: "string"
+      }
     }
-  }
-});
+  });
 
-episodes = episodesDownloadStr.split(" ").map(episodeNum => episodes[Number(episodeNum) - 1]);
+  // Si escribe 0 → cancelar y salir
+  if (episodesDownloadStr.trim() === "0") {
+    console.log("\n🚪 Descarga cancelada por el usuario.\n");
+    process.exit(0);
+  }
+
+  selectedEpisodes = episodesDownloadStr
+    .split(" ")
+    .map(num => episodes[Number(num) - 1])
+    .filter(Boolean);
+
+  if (selectedEpisodes.length > 0) break;
+
+  console.log("\n⚠️  No has elegido ningún episodio válido. Intenta de nuevo.\n");
+}
 
 // Download episodes
-
 console.log();
 
 async function downloadEpisode(episode) {
-  const fileName = sanitize(episode.title, {replacement: "_"}).concat(".mp3");
-  const podcastDir = sanitize(episode.podcast, {replacement: "_"});
+  const fileName = sanitize(episode.title, { replacement: "_" }).concat(".mp3");
+  const podcastDir = sanitize(episode.podcast, { replacement: "_" });
   const filePath = path.join(config.downloadPath, podcastDir, fileName);
 
-  fs.mkdirSync(path.dirname(filePath), {recursive: true});
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
   const writer = fs.createWriteStream(filePath);
 
   const response = await axios({
@@ -187,10 +202,9 @@ async function downloadEpisode(episode) {
   });
 }
 
-for (const episode of episodes) {
-  console.log(`Descargando... ${ episodes.indexOf(episode) + 1 }/${ episodes.length }`);
+for (const episode of selectedEpisodes) {
+  console.log(`Descargando... ${selectedEpisodes.indexOf(episode) + 1}/${selectedEpisodes.length}`);
   await downloadEpisode(episode);
 }
 
-console.log("Descarga terminada");
-console.log();
+console.log("✅ Descarga terminada\n");
