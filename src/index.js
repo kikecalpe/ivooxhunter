@@ -80,7 +80,7 @@ if (podcastNum) {
 
 // Ask days
 
-const { days } = await prompt.get({
+let { days } = await prompt.get({
   properties: {
     days: {
       description: "\n¿Cuantos días quieres consultar?",
@@ -96,7 +96,6 @@ console.log();
 console.log("Consultando...");
 
 for (const podcast of podcasts) {
-
   if (podcasts.indexOf(podcast) > 0) {
     await new Promise(resolve => setTimeout(resolve, config.requestWait));
   }
@@ -107,7 +106,42 @@ for (const podcast of podcasts) {
   });
 
   Array.prototype.push.apply(episodes, podcastEpisodes);
+}
 
+// 🔄 Repetir si no se encontraron episodios
+while (episodes.length === 0) {
+  console.log("\nNo se encontraron episodios en ese rango de días.");
+
+  const { newDays } = await prompt.get({
+    properties: {
+      newDays: {
+        description: "\n¿Cuántos días quieres consultar? (introduce un número mayor o 0 para salir)",
+        default: days * 2,
+        type: "integer"
+      }
+    }
+  });
+
+  if (newDays === 0) {
+    console.log("\nSaliendo sin descargar nada.\n");
+    process.exit(0);
+  }
+
+  episodes = []; // limpiar antes de rellenar otra vez
+  for (const podcast of podcasts) {
+    if (podcasts.indexOf(podcast) > 0) {
+      await new Promise(resolve => setTimeout(resolve, config.requestWait));
+    }
+
+    const podcastEpisodes = await ivoox.getEpisodes(podcast.url, newDays, config.requestWait);
+    podcastEpisodes.forEach(episode => {
+      episode.podcast = podcast.name;
+    });
+
+    Array.prototype.push.apply(episodes, podcastEpisodes);
+  }
+
+  days = newDays;
 }
 
 episodes.sort((a, b) => {
@@ -148,44 +182,29 @@ for (const episode of episodes) {
   }
 }
 
-// Ask episodes to download (loop until valid or cancel)
-let selectedEpisodes = [];
+// Ask episodes to download
 
-while (true) {
-  const { episodesDownloadStr } = await prompt.get({
-    properties: {
-      episodesDownloadStr: {
-        description: "\n¿Que episodios quieres descargar? (usa espacios) — 0 para cancelar:",
-        type: "string"
-      }
+const { episodesDownloadStr } = await prompt.get({
+  properties: {
+    episodesDownloadStr: {
+      description: "\n¿Que episodios quieres descargar?, usa espacios para separarlos:",
+      type: "string"
     }
-  });
-
-  // Si escribe 0 → cancelar y salir
-  if (episodesDownloadStr.trim() === "0") {
-    console.log("\n🚪 Descarga cancelada por el usuario.\n");
-    process.exit(0);
   }
+});
 
-  selectedEpisodes = episodesDownloadStr
-    .split(" ")
-    .map(num => episodes[Number(num) - 1])
-    .filter(Boolean);
-
-  if (selectedEpisodes.length > 0) break;
-
-  console.log("\n⚠️  No has elegido ningún episodio válido. Intenta de nuevo.\n");
-}
+episodes = episodesDownloadStr.split(" ").map(episodeNum => episodes[Number(episodeNum) - 1]);
 
 // Download episodes
+
 console.log();
 
 async function downloadEpisode(episode) {
-  const fileName = sanitize(episode.title, { replacement: "_" }).concat(".mp3");
-  const podcastDir = sanitize(episode.podcast, { replacement: "_" });
+  const fileName = sanitize(episode.title, {replacement: "_"}).concat(".mp3");
+  const podcastDir = sanitize(episode.podcast, {replacement: "_"});
   const filePath = path.join(config.downloadPath, podcastDir, fileName);
 
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.mkdirSync(path.dirname(filePath), {recursive: true});
   const writer = fs.createWriteStream(filePath);
 
   const response = await axios({
@@ -202,9 +221,10 @@ async function downloadEpisode(episode) {
   });
 }
 
-for (const episode of selectedEpisodes) {
-  console.log(`Descargando... ${selectedEpisodes.indexOf(episode) + 1}/${selectedEpisodes.length}`);
+for (const episode of episodes) {
+  console.log(`Descargando... ${ episodes.indexOf(episode) + 1 }/${ episodes.length }`);
   await downloadEpisode(episode);
 }
 
-console.log("✅ Descarga terminada\n");
+console.log("Descarga terminada");
+console.log();
