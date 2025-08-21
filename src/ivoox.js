@@ -61,21 +61,7 @@ function parseIvoox(document) {
   console.log(`DEBUG: Se parsearon ${parsed.length} episodios`);
   return parsed;
 }
-//(() => {
-      const titulo = a?.textContent.trim();
-      const url = a ? new URL(a.getAttribute('href'), location.origin).href : null;
 
-      const podcast = ep.querySelector('div.font-size-12.text-light a')?.textContent.trim() ?? null;
-
-      // Selector “suave” para la fecha relativa (puede variar por responsive)
-      const fechaRel =
-        ep.querySelector('span.mr-2.text-gray.font-size-12.font-size-sm-14.text-nowrap')?.textContent.trim() ??
-        ep.querySelector('span.text-gray')?.textContent.trim() ?? null;
-
-      console.log({ i, titulo, url, podcast, fechaRel });
-    }
-  });
-})();
 
 
 async function getEpisodes(url, date) {
