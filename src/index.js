@@ -9,202 +9,147 @@ import ivoox from "./ivoox.js";
 
 const basePath = url.fileURLToPath(new URL("..", import.meta.url));
 let config = {};
-let podcasts = [];
-let episodes = [];
 
 prompt.start();
 prompt.message = "";
 prompt.delimiter = "";
 
-// Configure
-
+// Leer configuración
 const configUrl = path.join(basePath, "config.json");
-
 try {
   config = JSON.parse(fs.readFileSync(configUrl));
 } catch (e) {
-  console.log();
-  console.log("Archivo de configuración no encontrado.");
-  console.log()
+  console.log("\nArchivo de configuración no encontrado.\n");
   process.exit(1);
 }
-
-podcasts = config.podcasts;
 
 if (!path.isAbsolute(config.downloadPath)) {
   config.downloadPath = path.join(basePath, config.downloadPath);
 }
 
-// Print script name
-
+// Mostrar nombre del script
 const packageJsonUrl = path.join(basePath, "package.json");
 const packageJson = JSON.parse(fs.readFileSync(packageJsonUrl));
+console.log(`\n${packageJson.name} ${packageJson.version}\n`);
 
-console.log();
-console.log(`${ packageJson.name } ${ packageJson.version }`);
+let continueApp = true;
 
-// Print podcasts
+while (continueApp) {
+  let podcasts = config.podcasts;
+  console.log("Mis podcasts:\n");
 
-console.log();
-console.log("Mis podcasts:");
-console.log();
-
-const longestIndex = String(podcasts.length).length;
-
-for (const podcast of podcasts) {
-  const index = podcasts.indexOf(podcast) + 1;
-  const indexSpaces = ' '.repeat(longestIndex - String(index).length);
-  console.log(`  ${ indexSpaces }${ index }. ${ podcast.name }`);
-}
-
-const indexSpaces = ' '.repeat(longestIndex - 1);
-console.log(`  ${ indexSpaces }0. Todos`);
-
-// Ask podcast
-
-const { podcastNum } = await prompt.get({
-  properties: {
-    podcastNum: {
-      description: "\n¿Que podcast quieres consultar?",
-      default: 0,
-      type: "integer"
-    }
-  }
-});
-
-// Filter podcasts
-
-if (podcastNum) {
-  podcasts = [podcasts[podcastNum - 1]];
-}
-
-// Ask days
-
-let { days } = await prompt.get({
-  properties: {
-    days: {
-      description: "\n¿Cuantos días quieres consultar?",
-      default: 14,
-      type: "integer"
-    }
-  }
-});
-
-// Get episodes data
-
-console.log();
-console.log("Consultando...");
-
-for (const podcast of podcasts) {
-  if (podcasts.indexOf(podcast) > 0) {
-    await new Promise(resolve => setTimeout(resolve, config.requestWait));
-  }
-
-  const podcastEpisodes = await ivoox.getEpisodes(podcast.url, days, config.requestWait);
-  podcastEpisodes.forEach(episode => {
-    episode.podcast = podcast.name;
+  const longestIndex = String(podcasts.length).length;
+  podcasts.forEach((podcast, idx) => {
+    const indexSpaces = ' '.repeat(longestIndex - String(idx + 1).length);
+    console.log(`  ${indexSpaces}${idx + 1}. ${podcast.name}`);
   });
 
-  Array.prototype.push.apply(episodes, podcastEpisodes);
-}
+  const indexSpaces = ' '.repeat(longestIndex - 1);
+  console.log(`  ${indexSpaces}0. Salir`);
 
-// 🔄 Repetir si no se encontraron episodios
-while (episodes.length === 0) {
-  console.log("\nNo se encontraron episodios en ese rango de días.");
-
-  const { newDays } = await prompt.get({
+  const { podcastNum } = await prompt.get({
     properties: {
-      newDays: {
-        description: "\n¿Cuántos días quieres consultar? (introduce un número mayor o 0 para salir)",
-        default: days * 2,
+      podcastNum: {
+        description: "\n¿Qué podcast quieres consultar?",
+        default: 0,
         type: "integer"
       }
     }
   });
 
-  if (newDays === 0) {
-    console.log("\nSaliendo sin descargar nada.\n");
-    process.exit(0);
+  if (podcastNum === 0) {
+    console.log("\nSaliendo...\n");
+    break;
   }
 
-  episodes = []; // limpiar antes de rellenar otra vez
-  for (const podcast of podcasts) {
-    if (podcasts.indexOf(podcast) > 0) {
-      await new Promise(resolve => setTimeout(resolve, config.requestWait));
+  const selectedPodcast = podcasts[podcastNum - 1];
+  let currentPage = selectedPodcast.url;
+  let episodes = [];
+  let morePages = true;
+
+  while (morePages) {
+    console.log(`\nConsultando: ${selectedPodcast.name}\n`);
+    const newEpisodes = await ivoox.getEpisodes(currentPage, null, config.requestWait);
+
+    if (newEpisodes.length === 0) {
+      console.log("\nNo se encontraron episodios.");
+      break;
     }
 
-    const podcastEpisodes = await ivoox.getEpisodes(podcast.url, newDays, config.requestWait);
-    podcastEpisodes.forEach(episode => {
-      episode.podcast = podcast.name;
+    newEpisodes.forEach(ep => ep.podcast = selectedPodcast.name);
+    episodes = episodes.concat(newEpisodes);
+
+    // Mostrar episodios
+    episodes.forEach((episode, idx) => {
+      const title = episode.title.length > 65 ? episode.title.slice(0, 62) + "..." : episode.title;
+      const premiumMark = episode.premium ? colors.red("[PREMIUM] ") : "";
+      console.log(`  ${String(idx + 1).padStart(2, " ")}. ${premiumMark}${title} (${episode.dateRelative})`);
     });
 
-    Array.prototype.push.apply(episodes, podcastEpisodes);
-  }
+    // Preguntar qué hacer
+    const { action } = await prompt.get({
+      properties: {
+        action: {
+          description: "\nIntroduce números para descargar (ej: 1 3 5) o escribe 'siguiente', 'otro', 'salir':",
+          type: "string",
+          required: true
+        }
+      }
+    });
 
-  days = newDays;
-}
+    if (action.toLowerCase() === "salir") {
+      morePages = false;
+      continueApp = false;
+      break;
+    } else if (action.toLowerCase() === "otro") {
+      break;
+    } else if (action.toLowerCase() === "siguiente") {
+      currentPage = await ivoox.getNextPageUrl(currentPage); // debes implementar esta función
+      if (!currentPage) {
+        console.log("\nNo hay más páginas disponibles.");
+        morePages = false;
+      }
+    } else {
+      // Descargar episodios seleccionados
+      const selectedIndexes = action.split(" ")
+        .map(n => parseInt(n))
+        .filter(n => !isNaN(n) && n > 0 && n <= episodes.length);
 
-episodes.sort((a, b) => {
-  if (a.date > b.date) return -1;
-  if (a.date < b.date) return  1;
-  return 0;
-});
+      for (const idx of selectedIndexes) {
+        const episode = episodes[idx - 1];
+        await downloadEpisode(episode);
+      }
 
-// Print episodes
+      // Preguntar si continuar en la misma página
+      const { nextAction } = await prompt.get({
+        properties: {
+          nextAction: {
+            description: "\n¿Descargar más de esta página (m), siguiente página (s), otro podcast (o), salir (x)?",
+            default: "x",
+            type: "string"
+          }
+        }
+      });
 
-function removeTime(date) {
-  date.setHours(0);
-  date.setMinutes(0);
-  date.setSeconds(0);
-  date.setMilliseconds(0);
-  return new Date(date - date.getTimezoneOffset() * 60 * 1000);
-}
-
-const repTitleSpaces = String(episodes.length).length + 2;
-const titleSpaces = ' '.repeat(repTitleSpaces);
-
-const today = removeTime(new Date());
-
-for (const episode of episodes) {
-  const index = episodes.indexOf(episode) + 1;
-  const repIndexSpaces = repTitleSpaces - 2 - String(index).length;
-  const indexSpaces = ' '.repeat(repIndexSpaces);
-
-  const numDays = (today - removeTime(episode.date)) / 1000 / 60 / 60 / 24;
-  const numDaysText = numDays === 1 ? "día" : "días";
-
-  console.log();
-  console.log(`  ${ indexSpaces }${ index }. ${ episode.podcast } (${ numDays } ${ numDaysText })`);
-  if (episode.premium) {
-    console.log(`  ${ titleSpaces }${ colors.red("[PREMIUM]") } ${ episode.title }`);
-  } else {
-    console.log(`  ${ titleSpaces }${ episode.title }`);
-  }
-}
-
-// Ask episodes to download
-
-const { episodesDownloadStr } = await prompt.get({
-  properties: {
-    episodesDownloadStr: {
-      description: "\n¿Que episodios quieres descargar?, usa espacios para separarlos:",
-      type: "string"
+      if (nextAction.toLowerCase() === "x") {
+        morePages = false;
+        continueApp = false;
+      } else if (nextAction.toLowerCase() === "o") {
+        morePages = false;
+      } else if (nextAction.toLowerCase() === "s") {
+        currentPage = await ivoox.getNextPageUrl(currentPage); // debes implementar esta función
+      }
     }
   }
-});
+}
 
-episodes = episodesDownloadStr.split(" ").map(episodeNum => episodes[Number(episodeNum) - 1]);
-
-// Download episodes
-
-console.log();
-
+// Función para descargar un episodio
 async function downloadEpisode(episode) {
-  const fileName = sanitize(episode.title, {replacement: "_"}).concat(".mp3");
-  const podcastDir = sanitize(episode.podcast, {replacement: "_"});
+  const fileName = sanitize(episode.title, { replacement: "_" }) + ".mp3";
+  const podcastDir = sanitize(episode.podcast, { replacement: "_" });
   const filePath = path.join(config.downloadPath, podcastDir, fileName);
 
-  fs.mkdirSync(path.dirname(filePath), {recursive: true});
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
   const writer = fs.createWriteStream(filePath);
 
   const response = await axios({
@@ -216,15 +161,11 @@ async function downloadEpisode(episode) {
   response.data.pipe(writer);
 
   return new Promise((resolve, reject) => {
-    writer.on("finish", resolve);
+    writer.on("finish", () => {
+      console.log(`Descargado: ${episode.title}`);
+      resolve();
+    });
     writer.on("error", reject);
   });
 }
 
-for (const episode of episodes) {
-  console.log(`Descargando... ${ episodes.indexOf(episode) + 1 }/${ episodes.length }`);
-  await downloadEpisode(episode);
-}
-
-console.log("Descarga terminada");
-console.log();
