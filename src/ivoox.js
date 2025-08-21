@@ -19,11 +19,11 @@ function page(pageNum, url) {
 // Depuramos función de parseo para ver si se obtienen los datos adecuadamente
 function parseIvoox(document) {
   const parsed = [];
-  const elements = document.querySelectorAll("div.modulo-type-episodio");
+  const elements = document.querySelectorAll("div.pr-lg-4");
   console.log(`DEBUG: Encontrados ${elements.length} elementos con clase "modulo-type-episodio"`);
 
   elements.forEach(element => {
-    const titleElement = element.querySelector(".content .title-wrapper a");
+    const titleElement = element.querySelector("h3 a");
     if (!titleElement) {
       console.log("DEBUG: titleElement no encontrado");
       return;
@@ -34,12 +34,13 @@ function parseIvoox(document) {
     if (!fileCode) console.log(`DEBUG: fileCode no encontrado en href: ${titleElement.href}`);
 
     const url = `http://ivoox.com/listen_mn_${fileCode}_1.mp3`;
+    if (!url) console.log(`DEBUG: mp3 url: ${url}`);
 
-    const dateElement = element.querySelector(".content .action .date");
+    const dateElement = element.querySelector("span.text-gray").textContent.trim();
     if (!dateElement) console.log(`DEBUG: dateElement no encontrado para ${title}`);
 
     const splitDate = dateElement?.title.match(reDate);
-    if (!splitDate) console.log(`DEBUG: No se pudo parsear la fecha para ${title}: ${dateElement?.title}`);
+    if (!splitDate) console.log(`DEBUG: No se pudo parsear la fecha para ${title}: ${dateElement.title}`);
 
     const date = splitDate ? new Date(
       splitDate[5],
@@ -49,8 +50,10 @@ function parseIvoox(document) {
       splitDate[2]
     ) : new Date();
 
-    const premiumElement = element.querySelector(".content .title-wrapper .fan-title");
-    const premium = premiumElement !== null;
+    const row = element.parentElement.parentElement;
+    const premiumBtn = row.querySelector(".round-play.btn-fans");
+    const premium = premiumBtn !== null;
+    console.log(`DEBUG: premium: ${premium}`);
 
     parsed.push({ title, url, date, premium });
   });
@@ -58,7 +61,22 @@ function parseIvoox(document) {
   console.log(`DEBUG: Se parsearon ${parsed.length} episodios`);
   return parsed;
 }
-//
+//(() => {
+      const titulo = a?.textContent.trim();
+      const url = a ? new URL(a.getAttribute('href'), location.origin).href : null;
+
+      const podcast = ep.querySelector('div.font-size-12.text-light a')?.textContent.trim() ?? null;
+
+      // Selector “suave” para la fecha relativa (puede variar por responsive)
+      const fechaRel =
+        ep.querySelector('span.mr-2.text-gray.font-size-12.font-size-sm-14.text-nowrap')?.textContent.trim() ??
+        ep.querySelector('span.text-gray')?.textContent.trim() ?? null;
+
+      console.log({ i, titulo, url, podcast, fechaRel });
+    }
+  });
+})();
+
 
 async function getEpisodes(url, date) {
   try {
