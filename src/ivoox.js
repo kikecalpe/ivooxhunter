@@ -36,26 +36,15 @@ function parseIvoox(document) {
     const url = `http://ivoox.com/listen_mn_${fileCode}_1.mp3`;
     if (!url) console.log(`DEBUG: mp3 url: ${url}`);
 
-    const dateElement = element.querySelector("span.text-gray").textContent.trim();
-    if (!dateElement) console.log(`DEBUG: dateElement no encontrado para ${title}`);
-
-    const splitDate = dateElement?.title.match(reDate);
-    if (!splitDate) console.log(`DEBUG: No se pudo parsear la fecha para ${title}: ${dateElement.title}`);
-
-    const date = splitDate ? new Date(
-      splitDate[5],
-      months.indexOf(splitDate[4]),
-      splitDate[3],
-      splitDate[1],
-      splitDate[2]
-    ) : new Date();
+    const relativeDate = element.querySelector("span.text-gray").textContent.trim();
+    if (!dateElement) console.log(`DEBUG: relativeDate no encontrado para ${title}`);
 
     const row = element.parentElement.parentElement;
     const premiumBtn = row.querySelector(".round-play.btn-fans");
     const premium = premiumBtn !== null;
     console.log(`DEBUG: premium: ${premium}`);
 
-    parsed.push({ title, url, date, premium });
+    parsed.push({ title, url, relativeDate, premium });
   });
 
   console.log(`DEBUG: Se parsearon ${parsed.length} episodios`);
