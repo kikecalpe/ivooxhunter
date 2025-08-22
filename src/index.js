@@ -4,6 +4,7 @@ import path from "path";
 import prompt from "prompt";
 import axios from "axios";
 import sanitize from "sanitize-filename";
+import NodeID3 from 'node-id3';
 import colors from "colors/safe.js";
 import ivoox from "./ivoox.js";
 
@@ -183,6 +184,12 @@ async function downloadEpisode(episode) {
         writer.on("finish", resolve);
         writer.on("error", reject);
       });
+      
+      const tags = {
+        title: episode.title,
+        artist: episode.podcast,
+      };
+      NodeID3.update(tags, filePath);
 
       console.log(`Descarga completada: ${fileName}`);
       return; // Éxito → salir de la función
