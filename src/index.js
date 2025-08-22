@@ -10,8 +10,10 @@ import ivoox from "./ivoox.js";
 import { debugLog, infoLog, warnLog, errorLog } from "./logger.js";
 
 
-const basePath = url.fileURLToPath(new URL("..", import.meta.url));
 let config = {};
+let isDebug = true; //inicializamos según interese y luego leemos de config.json
+const basePath = url.fileURLToPath(new URL("..", import.meta.url));
+debugLog(isDebug, `basePath: ${basePath}`);
 
 prompt.start();
 prompt.message = "";
@@ -19,37 +21,36 @@ prompt.delimiter = "";
 
 // Leer configuración
 const configUrl = path.join(basePath, "config.json");
-console.log(`DEBUG: configURl: ${configUrl}\n`);
+debugLog(isDebug, `configURl: ${configUrl}`);
 try {
   config = JSON.parse(fs.readFileSync(configUrl));
-} catch (e) {
-  console.log("\nArchivo de configuración no encontrado.\n");
+  // Leemos config.debug de config.json
+  isDebug = config.debug;
+  debugLog(isDebug, `config.isDebug: ${isDebug}\n`);
+} catch (err) {
+  errorLog(isDebug, err, "\nArchivo de configuración no encontrado.\n");
   process.exit(1);
 }
-console.log(`DEBUG: config.downloadPath: ${colors.green(config.downloadPath)}\n`);
-// Pasamos config.debug al logger
-const DEBUG = config.debug;
-console.log(`DEBUG: DEBUG: ${DEBUG}\n`);
-debugLog(DEBUG, "Este es un mensaje de depuración");
-debugLog(DEBUG, `basePath: ${basePath}`);
-debugLog(DEBUG, "basePath: ${basePath}");
+debugLog(isDebug, `config.downloadPath: ${colors.green(config.downloadPath)}\n`);
+
+// mensajes log de ejemplo, borrar luego
 infoLog("Proceso iniciado correctamente");
 warnLog("Este es un aviso");
 try {
   throw new Error("Algo salió mal");
 } catch (err) {
-  errorLog(err, "Ocurrió un error mientras se descargaba el archivo");
+  errorLog(isDebug, err, "Ocurrió un error mientras se descargaba el archivo");
 }
 
 if (!path.isAbsolute(config.downloadPath)) {
   config.downloadPath = path.join(basePath, config.downloadPath);
 }
-console.log(`Los episodios se descargarán en: ${colors.green(config.downloadPath)}\n`);
 
 // Mostrar nombre del script
 const packageJsonUrl = path.join(basePath, "package.json");
 const packageJson = JSON.parse(fs.readFileSync(packageJsonUrl));
-console.log(`\n${packageJson.name} ${packageJson.version}\n`);
+infoLog(`\n${packageJson.name} ${packageJson.version}\n`);
+infoLog(`Los episodios se descargarán en: ${colors.green(config.downloadPath)}\n`);
 
 let continueApp = true;
 
@@ -77,7 +78,7 @@ while (continueApp) {
   });
 
   if (podcastNum === 0) {
-    console.log("\nSaliendo...\n");
+    infoLog("\nSaliendo...\n");
     break;
   }
 
@@ -87,11 +88,11 @@ while (continueApp) {
   let morePages = true;
 
   while (morePages) {
-    console.log(`\nConsultando: ${selectedPodcast.name}\n`);
+    infoLog(`\nConsultando: ${selectedPodcast.name}\n`);
     const newEpisodes = await ivoox.getEpisodes(currentPage, null, config.requestWait);
 
     if (newEpisodes.length === 0) {
-      console.log("\nNo se encontraron episodios.\n");
+      warnLog("\nNo se encontraron episodios.\n");
       break;
     }
 
@@ -130,7 +131,7 @@ while (continueApp) {
     } else if (action.toLowerCase() === "s") {
       currentPage = await ivoox.page("next", currentPage);
       if (!currentPage) {
-        console.log("\nNo hay más páginas disponibles.");
+        warnLog("\nNo hay más páginas disponibles.");
         morePages = false;
       }
     } else {
@@ -141,7 +142,7 @@ while (continueApp) {
 
       for (const idx of selectedIndexes) {
         const episode = episodes[idx - 1];
-        console.log("DEBUG: Episodio a descargar:", episode);
+        debugLog(isDebug, "Episodio a descargar:", episode);
         await downloadEpisode(episode);
       }
 
@@ -225,17 +226,17 @@ async function downloadEpisode(episode) {
       // Borrar la imagen temporal
       fs.unlinkSync(coverTempPath);
 
-      console.log(`Descarga completada: ${fileName}`);
+      infoLog(`Descarga completada: ${fileName}`);
       return; // Éxito → salir de la función
 
     } catch (error) {
       attempts++;
-      console.log(`Error descargando "${episode.title}" (intento ${attempts}/${maxAttempts}): ${error.code || error.message}`);
+      errorLog(isDebug, error, `Error descargando "${episode.title}" (intento ${attempts}/${maxAttempts})`);
       if (attempts < maxAttempts) {
-        console.log("Reintentando en 20 segundos...");
+        warnLog("Reintentando en 20 segundos...");
         await new Promise(res => setTimeout(res, 20000));
       } else {
-        console.log(`Falló la descarga de: ${fileName}. Se salta este episodio.`);
+        errorLog(isDebug, error, `Falló la descarga de: ${fileName}. Se salta este episodio.`);
       }
     }
   }

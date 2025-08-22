@@ -10,8 +10,8 @@ function timestamp() {
   return new Date().toISOString().substr(11, 8);
 }
 
-export function debugLog(enabled, ...args) {
-  if (enabled) {
+export function debugLog(debugEnabled, ...args) {
+  if (debugEnabled) {
     console.log(`${COLORS.debug}[${timestamp()}] DEBUG:${COLORS.reset}`, ...args);
   }
 }
@@ -24,9 +24,9 @@ export function warnLog(...args) {
   console.warn(`${COLORS.warn}[${timestamp()}] WARNING:${COLORS.reset}`, ...args);
 }
 
-export function errorLog(error, ...args) {
+export function errorLog(debugEnabled, error, ...args) {
   console.error(`${COLORS.error}[${timestamp()}] ERROR:${COLORS.reset}`, ...args);
-  if (error?.stack) {
+  if (debugEnabled) {
     console.error(`${COLORS.error}STACK TRACE:${COLORS.reset}`);
     console.error(error.stack);
   }

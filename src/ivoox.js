@@ -20,49 +20,49 @@ function parseIvoox(document) {
   try {
     elements = document.querySelectorAll("div.pr-lg-4");
   } catch (err) {
-    console.log(`Error: Falló el selector de elements = document.querySelectorAll("div.pr-lg-4"): ${elements}`);
+    errorLog(isDebug, err, `Falló el selector de elements = document.querySelectorAll("div.pr-lg-4"): ${elements}`);
     elements = []; // Evitar que rompa más abajo
   }
-  console.log(`DEBUG: Encontrados ${elements.length} episodios del podcast.`);
+  debugLog(isDebug, `Encontrados ${elements.length} episodios del podcast.`);
   
   elements.forEach(element => {
     let titleElement, title, fileCode, url, relativeDate, premium;
     try {  
       titleElement = element.querySelector("h3 a");
-      if (!titleElement) console.log("DEBUG: titleElement no encontrado");
+      if (!titleElement) debugLog(isDebug, "titleElement no encontrado");
     } catch (err) {
-      console.log(`Error: Falló el selector de titleElement = element.querySelector("h3 a"): ${titleElement}`);
+      errorLog(isDebug, err, `Falló el selector de titleElement = element.querySelector("h3 a"): ${titleElement}`);
     }
   
     try {
       title = titleElement.textContent.trim();
       fileCode = titleElement.href.split("_")[2];
-      if (!fileCode) console.log(`DEBUG: fileCode no encontrado en href: ${titleElement.href}`);
+      if (!fileCode) debugLog(isDebug, `fileCode no encontrado en href: ${titleElement.href}`);
     } catch (err) {
-      console.log(`Error: Falló el selector de title: ${title} o la operación para obtener el filecode: ${filecode}`);
+      errorLog(isDebug, err, `Falló el selector de title: ${title} o la operación para obtener el filecode: ${filecode}`);
     }
 
     url = `http://ivoox.com/listen_mn_${fileCode}_1.mp3`;
-    if (!url) console.log(`DEBUG: mp3 url: ${url}`);
+    if (!url) debugLog(isDebug, `mp3 url: ${url}`);
 
     try {
       relativeDate = element.querySelector("span.text-gray").textContent.trim();
-      if (!relativeDate) console.log(`DEBUG: relativeDate no encontrado para ${title}`);
+      if (!relativeDate) debugLog(isDebug, `relativeDate no encontrado para ${title}`);
     } catch (err) {
-      console.log(`Error: Falló el selector de relativeDate = element.querySelector("span.text-gray").textContent.trim(): ${relativeDate}`);
+      errorLog(isDebug, err, `Falló el selector de relativeDate = element.querySelector("span.text-gray").textContent.trim(): ${relativeDate}`);
     }
     try {
       const row = element.parentElement?.parentElement;
       const premiumBtn = row.querySelector(".round-play.btn-fans");
       premium = premiumBtn !== null;
     } catch (err) {
-      console.log(`Error: Falló el selector de premium: ${premium}`);
+      errorLog(isDebug, err, `Falló el selector de premium: ${premium}`);
     }
 
     parsed.push({ title, url, relativeDate, premium });
   });
 
-  console.log(`DEBUG: Se parsearon ${parsed.length} episodios`);
+  debugLog(isDebug, `Se parsearon ${parsed.length} episodios`);
   return parsed;
 }
 
@@ -86,8 +86,8 @@ async function getEpisodes(url, date) {
     const pageEpisodes = parseIvoox(document);
 
     return pageEpisodes;
-  } catch (error) {
-    console.error("Error al consultar Ivoox:", error.message);
+  } catch (err) {
+    errorLog(isDebug, err, "Error al consultar Ivoox:");
     return [];
   }
 }
