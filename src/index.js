@@ -89,7 +89,7 @@ while (continueApp) {
 
   while (morePages) {
     infoLog(`\nConsultando: ${selectedPodcast.name}\n`);
-    const newEpisodes = await ivoox.getEpisodes(currentPage, null, config.requestWait);
+    const newEpisodes = await ivoox.getEpisodes(isDebug, currentPage, null, config.requestWait);
 
     if (newEpisodes.length === 0) {
       warnLog("\nNo se encontraron episodios.\n");

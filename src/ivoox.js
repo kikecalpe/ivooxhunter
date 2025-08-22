@@ -14,7 +14,7 @@ function page(pageNum, url) {
 }
 
 // Depuramos función de parseo para ver si se obtienen los datos adecuadamente
-function parseIvoox(document) {
+function parseIvoox(isDebug, document) {
   const parsed = [];
   let elements; 
   try {
@@ -68,7 +68,7 @@ function parseIvoox(document) {
 
 
 
-async function getEpisodes(url, date) {
+async function getEpisodes(isDebug, url, date) {
   try {
     const response = await axios.get(url, {
       timeout: 20000, // máximo 20 segundos
@@ -83,7 +83,7 @@ async function getEpisodes(url, date) {
     const document = dom.window.document;
 
     // usamos tu parser
-    const pageEpisodes = parseIvoox(document);
+    const pageEpisodes = parseIvoox(isDebug, document);
 
     return pageEpisodes;
   } catch (err) {
