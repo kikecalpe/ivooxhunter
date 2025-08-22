@@ -9,14 +9,6 @@ import colors from "colors/safe.js";
 import ivoox from "./ivoox.js";
 import { debugLog, infoLog, warnLog, errorLog } from "./logger.js";
 
-debugLog("Este es un mensaje de depuración");
-infoLog("Proceso iniciado correctamente");
-warnLog("Este es un aviso");
-try {
-  throw new Error("Algo salió mal");
-} catch (err) {
-  errorLog(err, "Ocurrió un error mientras se descargaba el archivo");
-}
 
 const basePath = url.fileURLToPath(new URL("..", import.meta.url));
 console.log(`DEBUG: basePath: ${basePath}\n`);
@@ -36,6 +28,16 @@ try {
   process.exit(1);
 }
 console.log(`DEBUG: config.downloadPath: ${colors.green(config.downloadPath)}\n`);
+// Pasamos config.debug al logger
+const DEBUG = config.debug;
+debugLog("Este es un mensaje de depuración");
+infoLog("Proceso iniciado correctamente");
+warnLog("Este es un aviso");
+try {
+  throw new Error("Algo salió mal");
+} catch (err) {
+  errorLog(err, "Ocurrió un error mientras se descargaba el archivo");
+}
 
 if (!path.isAbsolute(config.downloadPath)) {
   config.downloadPath = path.join(basePath, config.downloadPath);
