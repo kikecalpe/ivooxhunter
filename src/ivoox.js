@@ -1,7 +1,7 @@
 import axios from "axios";
 import jsdom from "jsdom";
 import https from "https";
-
+import { debugLog, infoLog, warnLog, errorLog } from "./logger.js";
 
 function page(pageNum, url) {
   const splitUrl = url.split("_");

@@ -1,10 +1,11 @@
 {
   "downloadPath": "/storage/emulated/0/Podcasts",
   "requestWait": 1000,
+  "debug": true,
   "podcasts":[
     {
       "name": "A Ciencia Cierta",
-      "url": "https://www.ivoox.com/podcast-a-ciencia-cierta_sq_f1286369_1.html"
+      "url": "https://www.ivoox.com/podcast-a-ciencia-cierta_sq_f1286369_1.html",
     },
     {
       "name": "Coffee Break: Señal y Ruido",

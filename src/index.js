@@ -7,6 +7,16 @@ import sanitize from "sanitize-filename";
 import NodeID3 from 'node-id3';
 import colors from "colors/safe.js";
 import ivoox from "./ivoox.js";
+import { debugLog, infoLog, warnLog, errorLog } from "./logger.js";
+
+debugLog("Este es un mensaje de depuración");
+infoLog("Proceso iniciado correctamente");
+warnLog("Este es un aviso");
+try {
+  throw new Error("Algo salió mal");
+} catch (err) {
+  errorLog(err, "Ocurrió un error mientras se descargaba el archivo");
+}
 
 const basePath = url.fileURLToPath(new URL("..", import.meta.url));
 console.log(`DEBUG: basePath: ${basePath}\n`);
@@ -127,6 +137,7 @@ while (continueApp) {
 
       for (const idx of selectedIndexes) {
         const episode = episodes[idx - 1];
+        console.log("DEBUG: Episodio a descargar:", episode);
         await downloadEpisode(episode);
       }
 
