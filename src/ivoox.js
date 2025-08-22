@@ -88,11 +88,6 @@ async function getEpisodes(url, date) {
     // usamos tu parser
     const pageEpisodes = parseIvoox(document);
 
-    // filtramos por fecha
-    const filteredEpisodes = pageEpisodes.filter(
-      (episode) => episode.date > date
-    );
-
     return filteredEpisodes;
   } catch (error) {
     console.error("Error al consultar Ivoox:", error.message);
