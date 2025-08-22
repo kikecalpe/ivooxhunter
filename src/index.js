@@ -11,8 +11,6 @@ import { debugLog, infoLog, warnLog, errorLog } from "./logger.js";
 
 
 const basePath = url.fileURLToPath(new URL("..", import.meta.url));
-debugLog(DEBUG, `basePath: ${basePath}`);
-debugLog(DEBUG, "basePath: ${basePath}");
 let config = {};
 
 prompt.start();
