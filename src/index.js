@@ -90,7 +90,11 @@ while (continueApp) {
     const { action } = await prompt.get({
       properties: {
         action: {
-          description: "\nIntroduce números para descargar (ej: 1 3 5) o escribe 'siguiente', 'otro', 'salir':",
+          description: 
+            "\nIntroduce números para descargar separados por espacios \x1b[97m(ej: 1 3 5)\x1b[0m, " +
+            "para \x1b[97msiguiente\x1b[0m página pulsa \x1b[97m(s)\x1b[0m, " +
+            "para ver \x1b[97motro\x1b[0m podcast pulsa \x1b[97m(o)\x1b[0m, " +
+            "para \x1b[97msalir\x1b[0m pulsa \x1b[97m(x)\x1b[0m:"
           type: "string",
           required: true
         }
@@ -124,7 +128,12 @@ while (continueApp) {
       const { nextAction } = await prompt.get({
         properties: {
           nextAction: {
-            description: "\n¿Descargar más de esta página (m), siguiente página (s), otro podcast (o), salir (x)?",
+            description: 
+              "\nPara descargar \x1b[97mmás\x1b[0m de esta página pulsa \x1b[97m(m)\x1b[0m, " +
+              "para pasar a la \x1b[97msiguiente\x1b[0m página pulsa \x1b[97m(s)\x1b[0m, " +
+              "para ver \x1b[97motro\x1b[0m podcast pulsa \x1b[97m(o)\x1b[0m, " +
+              "para \x1b[97msalir\x1b[0m pulsa \x1b[97m(x)\x1b[0m?",
+
             default: "x",
             type: "string"
           }
