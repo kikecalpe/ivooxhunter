@@ -1,5 +1,5 @@
 {
-  "downloadPath": "Podcasts",
+  "downloadPath": "/storage/emulated/0/Podcasts",
   "requestWait": 1000,
   "podcasts":[
     {
