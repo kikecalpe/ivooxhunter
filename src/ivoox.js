@@ -92,4 +92,4 @@ async function getEpisodes(url, date) {
   }
 }
 
-export default { getEpisodes };
+export default { getEpisodes, page, };

@@ -81,7 +81,7 @@ while (continueApp) {
 
     // Mostrar episodios
     episodes.forEach((episode, idx) => {
-      const title = episode.title.length > 65 ? episode.title.slice(0, 62) + "..." : episode.title;
+      const title = episode.title;
       const premiumMark = episode.premium ? colors.red("[PREMIUM] ") : "";
       console.log(`  ${String(idx + 1).padStart(2, " ")}. ${premiumMark}${title} (${episode.dateRelative})`);
     });
@@ -91,7 +91,7 @@ while (continueApp) {
       properties: {
         action: {
           description: 
-            "\nIntroduce números para descargar separados por espacios \x1b[97m(ej: 1 3 5)\x1b[0m, " +
+            "\n\x1b[97mIntroduce números para descargar separados por espacios (ej: 1 3 5)\x1b[0m, " +
             "para \x1b[97msiguiente\x1b[0m página pulsa \x1b[97m(s)\x1b[0m, " +
             "para ver \x1b[97motro\x1b[0m podcast pulsa \x1b[97m(o)\x1b[0m, " +
             "para \x1b[97msalir\x1b[0m pulsa \x1b[97m(x)\x1b[0m:",
@@ -130,7 +130,7 @@ while (continueApp) {
         properties: {
           nextAction: {
             description: 
-              "\nPara descargar \x1b[97mmás\x1b[0m de esta página pulsa \x1b[97m(m)\x1b[0m, " +
+              "\n\x1b[97mPara descargar \x1b[97mmás\x1b[0m de esta página pulsa \x1b[97m(m)\x1b[0m, " +
               "para pasar a la \x1b[97msiguiente\x1b[0m página pulsa \x1b[97m(s)\x1b[0m, " +
               "para ver \x1b[97motro\x1b[0m podcast pulsa \x1b[97m(o)\x1b[0m, " +
               "para \x1b[97msalir\x1b[0m pulsa \x1b[97m(x)\x1b[0m?",
