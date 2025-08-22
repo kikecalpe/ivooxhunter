@@ -1,4 +1,4 @@
-/const COLORS = {
+const COLORS = {
   reset: "\x1b[0m",
   debug: "\x1b[97m",
   info: "\x1b[36m",
