@@ -108,7 +108,7 @@ while (continueApp) {
     } else if (action.toLowerCase() === "otro") {
       break;
     } else if (action.toLowerCase() === "siguiente") {
-      currentPage = await ivoox.getNextPageUrl(currentPage); // debes implementar esta función
+      currentPage = await ivoox.page("next", currentPage);
       if (!currentPage) {
         console.log("\nNo hay más páginas disponibles.");
         morePages = false;
@@ -146,7 +146,7 @@ while (continueApp) {
       } else if (nextAction.toLowerCase() === "o") {
         morePages = false;
       } else if (nextAction.toLowerCase() === "s") {
-        currentPage = await ivoox.getNextPageUrl(currentPage); // debes implementar esta función
+        currentPage = await ivoox.page("next", currentPage);
       }
     }
   }

@@ -2,9 +2,6 @@ import axios from "axios";
 import jsdom from "jsdom";
 import https from "https";
 
-const reDate = /^(\d{2}):(\d{2}) - (\d{2}) de (\w{3})\. de (\d{4})$/;
-const months = ["ene", "feb", "mar", "abr", "may", "jun",
-                "jul", "ago", "sep", "oct", "nov", "dic"];
 
 function page(pageNum, url) {
   const splitUrl = url.split("_");
