@@ -150,22 +150,41 @@ async function downloadEpisode(episode) {
   const filePath = path.join(config.downloadPath, podcastDir, fileName);
 
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  const writer = fs.createWriteStream(filePath);
 
-  const response = await axios({
-    url: episode.url,
-    method: "GET",
-    responseType: "stream"
-  });
+  let attempts = 0;
+  const maxAttempts = 3;
 
-  response.data.pipe(writer);
+  while (attempts < maxAttempts) {
+    try {
+      const response = await axios({
+        url: episode.url,
+        method: "GET",
+        responseType: "stream",
+        timeout: 15000 // 15s por intento
+      });
 
-  return new Promise((resolve, reject) => {
-    writer.on("finish", () => {
-      console.log(`Descargado: ${episode.title}`);
-      resolve();
-    });
-    writer.on("error", reject);
-  });
+      const writer = fs.createWriteStream(filePath);
+      response.data.pipe(writer);
+
+      await new Promise((resolve, reject) => {
+        writer.on("finish", resolve);
+        writer.on("error", reject);
+      });
+
+      console.log(`Descarga completada: ${fileName}`);
+      return; // Éxito → salir de la función
+
+    } catch (error) {
+      attempts++;
+      console.log(`Error descargando "${episode.title}" (intento ${attempts}/${maxAttempts}): ${error.code || error.message}`);
+      if (attempts < maxAttempts) {
+        console.log("Reintentando en 20 segundos...");
+        await new Promise(res => setTimeout(res, 20000));
+      } else {
+        console.log(`Falló la descarga de: ${fileName}. Se salta este episodio.`);
+      }
+    }
+  }
 }
+
 
