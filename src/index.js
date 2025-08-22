@@ -11,7 +11,8 @@ import { debugLog, infoLog, warnLog, errorLog } from "./logger.js";
 
 
 const basePath = url.fileURLToPath(new URL("..", import.meta.url));
-console.log(`DEBUG: basePath: ${basePath}\n`);
+debugLog(DEBUG, `basePath: ${basePath}`);
+debugLog(DEBUG, "basePath: ${basePath}");
 let config = {};
 
 prompt.start();
@@ -30,7 +31,9 @@ try {
 console.log(`DEBUG: config.downloadPath: ${colors.green(config.downloadPath)}\n`);
 // Pasamos config.debug al logger
 const DEBUG = config.debug;
-debugLog("Este es un mensaje de depuración");
+debugLog(DEBUG, "Este es un mensaje de depuración");
+debugLog(DEBUG, `basePath: ${basePath}`);
+debugLog(DEBUG, "basePath: ${basePath}");
 infoLog("Proceso iniciado correctamente");
 warnLog("Este es un aviso");
 try {
