@@ -211,23 +211,27 @@ async function downloadEpisode(episode) {
         writer.on("error", reject);
       });
 
-      // Descargar imagen de portada temporalmente
-      const coverTempPath = path.join(config.downloadPath, podcastDir, "cover_temp.jpg");
-      await downloadCoverImage(episode.coverUrl, coverTempPath); // episode.coverUrl debe existir
+      // Descargar imagen de portada si no existe ya
+      const coverPath = path.join(config.downloadPath, podcastDir, "cover.jpg");
+      debugLog(isDebug, `coverPath: ${coverPath}`);
+      if (!fs.existsSync(coverPath)) {
+        debugLog(isDebug, `Portada no existe en ${coverPath}`);
+        if (episode.coverUrl) {
+          await downloadCoverImage(episode.coverUrl, coverPath);
+          infoLog(`Se descargo nueva portada de ${selectedPodcast} en ${coverPath}`);
+        }
+      }
       
       // actualizar tags id3
       const tags = {
         title: episode.title,
         artist: episode.podcast,
-        image: coverTempPath
+        image: coverPath
       };
       NodeID3.update(tags, filePath);
       
-      // Borrar la imagen temporal
-      fs.unlinkSync(coverTempPath);
-
       infoLog(`Descarga completada: ${fileName}`);
-      return; // Éxito → salir de la función
+      return; 
 
     } catch (error) {
       attempts++;

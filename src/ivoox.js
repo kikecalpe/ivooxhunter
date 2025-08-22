@@ -26,7 +26,7 @@ function parseIvoox(isDebug, document) {
   debugLog(isDebug, `Encontrados ${elements.length} episodios del podcast.`);
   
   elements.forEach(element => {
-    let titleElement, title, fileCode, url, relativeDate, premium;
+    let titleElement, title, fileCode, url, relativeDate, premium, coverUrl;
     try {  
       titleElement = element.querySelector("h3 a");
       if (!titleElement) debugLog(isDebug, "titleElement no encontrado");
@@ -58,8 +58,15 @@ function parseIvoox(isDebug, document) {
     } catch (err) {
       errorLog(isDebug, err, `Falló el selector de premium: ${premium}`);
     }
+    try {
+      const coverElement = element.querySelector("img.img-hover");
+      coverUrl = coverElement?.src || null;
+    } catch (err) {
+      errorLog(isDebug, err, `Error obteniendo URL portada: ${err.message}`);
+      coverUrl = null;
+    }
 
-    parsed.push({ title, url, relativeDate, premium });
+    parsed.push({ title, url, relativeDate, premium, coverUrl });
   });
 
   debugLog(isDebug, `Se parsearon ${parsed.length} episodios`);
