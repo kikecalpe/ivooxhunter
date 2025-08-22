@@ -8,7 +8,7 @@ import colors from "colors/safe.js";
 import ivoox from "./ivoox.js";
 
 const basePath = url.fileURLToPath(new URL("..", import.meta.url));
-console.log(`DEBUG: basePath: ${basePath)}\n`);
+console.log(`DEBUG: basePath: ${basePath}\n`);
 let config = {};
 
 prompt.start();
