@@ -72,7 +72,7 @@ while (continueApp) {
     const newEpisodes = await ivoox.getEpisodes(currentPage, null, config.requestWait);
 
     if (newEpisodes.length === 0) {
-      console.log("\nNo se encontraron episodios.");
+      console.log("\nNo se encontraron episodios.\n¿Qué quieres hacer ahora?");
       break;
     }
 
