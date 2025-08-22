@@ -8,6 +8,7 @@ import colors from "colors/safe.js";
 import ivoox from "./ivoox.js";
 
 const basePath = url.fileURLToPath(new URL("..", import.meta.url));
+console.log(`DEBUG: basePath: ${basePath)}\n`);
 let config = {};
 
 prompt.start();
@@ -16,16 +17,19 @@ prompt.delimiter = "";
 
 // Leer configuración
 const configUrl = path.join(basePath, "config.json");
+console.log(`DEBUG: configURl: ${configUrl}\n`);
 try {
   config = JSON.parse(fs.readFileSync(configUrl));
 } catch (e) {
   console.log("\nArchivo de configuración no encontrado.\n");
   process.exit(1);
 }
+console.log(`DEBUG: config.downloadPath: ${colors.green(config.downloadPath)}\n`);
 
 if (!path.isAbsolute(config.downloadPath)) {
   config.downloadPath = path.join(basePath, config.downloadPath);
 }
+console.log(`Los episodios se descargarán en: ${colors.green(config.downloadPath)}\n`);
 
 // Mostrar nombre del script
 const packageJsonUrl = path.join(basePath, "package.json");
