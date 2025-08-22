@@ -88,7 +88,7 @@ async function getEpisodes(url, date) {
     // usamos tu parser
     const pageEpisodes = parseIvoox(document);
 
-    return filteredEpisodes;
+    return pageEpisodes;
   } catch (error) {
     console.error("Error al consultar Ivoox:", error.message);
     return [];
