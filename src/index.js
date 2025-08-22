@@ -157,6 +157,16 @@ while (continueApp) {
   }
 }
 
+// Función para descargar carátulas
+async function downloadCoverImage(url, tempPath) {
+  const response = await axios({
+    url,
+    method: "GET",
+    responseType: "arraybuffer"
+  });
+  fs.writeFileSync(tempPath, response.data);
+}
+
 // Función para descargar un episodio
 async function downloadEpisode(episode) {
   const fileName = sanitize(episode.title, { replacement: "_" }) + ".mp3";
@@ -184,12 +194,21 @@ async function downloadEpisode(episode) {
         writer.on("finish", resolve);
         writer.on("error", reject);
       });
+
+      // Descargar imagen de portada temporalmente
+      const coverTempPath = path.join(config.downloadPath, podcastDir, "cover_temp.jpg");
+      await downloadCoverImage(episode.coverUrl, coverTempPath); // episode.coverUrl debe existir
       
+      // actualizar tags id3
       const tags = {
         title: episode.title,
         artist: episode.podcast,
+        image: coverTempPath
       };
       NodeID3.update(tags, filePath);
+      
+      // Borrar la imagen temporal
+      fs.unlinkSync(coverTempPath);
 
       console.log(`Descarga completada: ${fileName}`);
       return; // Éxito → salir de la función
