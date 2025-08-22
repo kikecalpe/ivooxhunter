@@ -94,20 +94,21 @@ while (continueApp) {
             "\nIntroduce números para descargar separados por espacios \x1b[97m(ej: 1 3 5)\x1b[0m, " +
             "para \x1b[97msiguiente\x1b[0m página pulsa \x1b[97m(s)\x1b[0m, " +
             "para ver \x1b[97motro\x1b[0m podcast pulsa \x1b[97m(o)\x1b[0m, " +
-            "para \x1b[97msalir\x1b[0m pulsa \x1b[97m(x)\x1b[0m:"
+            "para \x1b[97msalir\x1b[0m pulsa \x1b[97m(x)\x1b[0m:",
+          default: "x",
           type: "string",
           required: true
         }
       }
     });
 
-    if (action.toLowerCase() === "salir") {
+    if (action.toLowerCase() === "x") {
       morePages = false;
       continueApp = false;
       break;
-    } else if (action.toLowerCase() === "otro") {
+    } else if (action.toLowerCase() === "o") {
       break;
-    } else if (action.toLowerCase() === "siguiente") {
+    } else if (action.toLowerCase() === "s") {
       currentPage = await ivoox.page("next", currentPage);
       if (!currentPage) {
         console.log("\nNo hay más páginas disponibles.");
@@ -133,7 +134,6 @@ while (continueApp) {
               "para pasar a la \x1b[97msiguiente\x1b[0m página pulsa \x1b[97m(s)\x1b[0m, " +
               "para ver \x1b[97motro\x1b[0m podcast pulsa \x1b[97m(o)\x1b[0m, " +
               "para \x1b[97msalir\x1b[0m pulsa \x1b[97m(x)\x1b[0m?",
-
             default: "x",
             type: "string"
           }
