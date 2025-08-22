@@ -19,45 +19,48 @@ function page(pageNum, url) {
 // Depuramos función de parseo para ver si se obtienen los datos adecuadamente
 function parseIvoox(document) {
   const parsed = [];
+  let elements; 
   try {
-  const elements = document.querySelectorAll("div.pr-lg-4");
+    elements = document.querySelectorAll("div.pr-lg-4");
   } catch (err) {
-  console.log(`Error: Falló el selector de elements = document.querySelectorAll("div.pr-lg-4"): ${elements}`);
+    console.log(`Error: Falló el selector de elements = document.querySelectorAll("div.pr-lg-4"): ${elements}`);
+    elements = []; // Evitar que rompa más abajo
   }
   console.log(`DEBUG: Encontrados ${elements.length} episodios del podcast.`);
   
   elements.forEach(element => {
-  try {  
-    const titleElement = element.querySelector("h3 a");
-    if (!titleElement) console.log("DEBUG: titleElement no encontrado");
-  } catch (err) {
-    console.log(`Error: Falló el selector de titleElement = element.querySelector("h3 a"): ${titleElement}`);
-  }
+    let titleElement, title, fileCode, url, relativeDate, premium;
+    try {  
+      titleElement = element.querySelector("h3 a");
+      if (!titleElement) console.log("DEBUG: titleElement no encontrado");
+    } catch (err) {
+      console.log(`Error: Falló el selector de titleElement = element.querySelector("h3 a"): ${titleElement}`);
+    }
   
-  try {
-    const title = titleElement.textContent.trim();
-    const fileCode = titleElement.href.split("_")[2];
-    if (!fileCode) console.log(`DEBUG: fileCode no encontrado en href: ${titleElement.href}`);
-  } catch (err) {
-    console.log(`Error: Falló el selector de title: ${title} o la operación para obtener el filecode: ${filecode}`);
-  }
+    try {
+      title = titleElement.textContent.trim();
+      fileCode = titleElement.href.split("_")[2];
+      if (!fileCode) console.log(`DEBUG: fileCode no encontrado en href: ${titleElement.href}`);
+    } catch (err) {
+      console.log(`Error: Falló el selector de title: ${title} o la operación para obtener el filecode: ${filecode}`);
+    }
 
-  const url = `http://ivoox.com/listen_mn_${fileCode}_1.mp3`;
-  if (!url) console.log(`DEBUG: mp3 url: ${url}`);
+    url = `http://ivoox.com/listen_mn_${fileCode}_1.mp3`;
+    if (!url) console.log(`DEBUG: mp3 url: ${url}`);
 
-  try {
-    const relativeDate = element.querySelector("span.text-gray").textContent.trim();
-    if (!relativeDate) console.log(`DEBUG: relativeDate no encontrado para ${title}`);
-  } catch (err) {
-    console.log(`Error: Falló el selector de relativeDate = element.querySelector("span.text-gray").textContent.trim(): ${relativeDate}`);
-  }
-  try {
-    const row = element.parentElement.parentElement;
-    const premiumBtn = row.querySelector(".round-play.btn-fans");
-    const premium = premiumBtn !== null;
-  } catch (err) {
-    console.log(`Error: Falló el selector de premium: ${premium}`);
-  }
+    try {
+      relativeDate = element.querySelector("span.text-gray").textContent.trim();
+      if (!relativeDate) console.log(`DEBUG: relativeDate no encontrado para ${title}`);
+    } catch (err) {
+      console.log(`Error: Falló el selector de relativeDate = element.querySelector("span.text-gray").textContent.trim(): ${relativeDate}`);
+    }
+    try {
+      const row = element.parentElement?.parentElement;
+      const premiumBtn = row.querySelector(".round-play.btn-fans");
+      premium = premiumBtn !== null;
+    } catch (err) {
+      console.log(`Error: Falló el selector de premium: ${premium}`);
+    }
 
     parsed.push({ title, url, relativeDate, premium });
   });
