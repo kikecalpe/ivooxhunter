@@ -29,6 +29,7 @@ try {
 console.log(`DEBUG: config.downloadPath: ${colors.green(config.downloadPath)}\n`);
 // Pasamos config.debug al logger
 const DEBUG = config.debug;
+console.log(`DEBUG: DEBUG: ${DEBUG}\n`);
 debugLog(DEBUG, "Este es un mensaje de depuración");
 debugLog(DEBUG, `basePath: ${basePath}`);
 debugLog(DEBUG, "basePath: ${basePath}");
