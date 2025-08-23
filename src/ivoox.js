@@ -13,7 +13,6 @@ function page(pageNum, url) {
   return splitUrl.join("_");
 }
 
-// Depuramos función de parseo para ver si se obtienen los datos adecuadamente
 function parseIvoox(isDebug, document) {
   const parsed = [];
   let elements; 
@@ -26,7 +25,7 @@ function parseIvoox(isDebug, document) {
   debugLog(isDebug, `Encontrados ${elements.length} episodios del podcast.`);
   
   elements.forEach(element => {
-    let titleElement, title, fileCode, url, relativeDate, premium, coverUrl;
+    let titleElement, title, fileCode, url, relativeDate, premium, coverUrl, description;
     try {  
       titleElement = element.querySelector("h3 a");
       if (!titleElement) debugLog(isDebug, "titleElement no encontrado");
@@ -34,7 +33,7 @@ function parseIvoox(isDebug, document) {
       errorLog(isDebug, err, `Falló el selector de titleElement = element.querySelector("h3 a"): ${titleElement}`);
     }
   
-    try {
+    try { //título y código
       title = titleElement.textContent.trim();
       fileCode = titleElement.href.split("_")[2];
       if (!fileCode) debugLog(isDebug, `fileCode no encontrado en href: ${titleElement.href}`);
@@ -45,28 +44,46 @@ function parseIvoox(isDebug, document) {
     url = `http://ivoox.com/listen_mn_${fileCode}_1.mp3`;
     if (!url) debugLog(isDebug, `mp3 url: ${url}`);
 
-    try {
+    try { //fecha
       relativeDate = element.querySelector("span.text-gray").textContent.trim();
       if (!relativeDate) debugLog(isDebug, `relativeDate no encontrado para ${title}`);
     } catch (err) {
       errorLog(isDebug, err, `Falló el selector de relativeDate = element.querySelector("span.text-gray").textContent.trim(): ${relativeDate}`);
     }
-    try {
-      const row = element.parentElement?.parentElement;
+    try { //premium y portada
+      const row = element.closest("div.d-flex.mb-3");
       const premiumBtn = row.querySelector(".round-play.btn-fans");
       premium = premiumBtn !== null;
     } catch (err) {
       errorLog(isDebug, err, `Falló el selector de premium: ${premium}`);
     }
-    try {
-      const coverElement = element.querySelector("img.img-hover");
-      coverUrl = coverElement?.src || null;
+    try { //portada
+      const row = element.closest("div.d-flex.mb-3");
+      const coverElement = row?.querySelector("img.img-hover");
+      if (coverElement?.src) {
+        debugLog(isDebug, `Imagen cruda encontrada: ${coverElement.src}`);
+        // Si viene como https://img-static.ivoox.com/index.php?...&url=REAL
+        const match = coverElement.src.match(/[?&]url=([^&]+)/);
+        coverUrl = match ? decodeURIComponent(match[1]) : coverElement.src;
+      } else {
+        coverUrl = null;
+        debugLog(isDebug, `Portada no encontrada para: ${title}`);
+      }
     } catch (err) {
       errorLog(isDebug, err, `Error obteniendo URL portada: ${err.message}`);
       coverUrl = null;
     }
+    try { //descripción
+      const descriptionElement = element.querySelector("div.description.mb-05");
+      description = descriptionElement?.textContent?.trim() ?? null;
+      if (!description) debugLog(isDebug, `Descripción no encontrada para: ${title}`);
+    } catch (err) {
+      errorLog(isDebug, err, `Error obteniendo descripción: ${err.message}`);
+      description = null;
+    }
 
-    parsed.push({ title, url, relativeDate, premium, coverUrl });
+
+    parsed.push({ title, url, relativeDate, premium, coverUrl, description });
   });
 
   debugLog(isDebug, `Se parsearon ${parsed.length} episodios`);

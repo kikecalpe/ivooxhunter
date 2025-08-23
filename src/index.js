@@ -227,6 +227,10 @@ async function downloadEpisode(episode) {
         title: episode.title,
         artist: episode.podcast,
         image: coverPath
+        comment: {
+          language: "es",   // obligatorio para la estructura ID3
+          text: episode.description || ""
+        }
       };
       NodeID3.update(tags, filePath);
       
