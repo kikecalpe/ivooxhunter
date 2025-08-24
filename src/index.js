@@ -226,7 +226,7 @@ async function downloadEpisode(episode) {
       const tags = {
         title: episode.title,
         artist: episode.podcast,
-        image: coverPath
+        image: coverPath,
         comment: {
           language: "es",   // obligatorio para la estructura ID3
           text: episode.description || ""
