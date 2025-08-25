@@ -20,6 +20,7 @@ function parseIvoox(isDebug, document) {
     const img = document.querySelector("div.image-wrapper img");
     const match = img.src.match(/[?&]url=([^&]+)/);
     const coverUrl = match ? decodeURIComponent(match[1]) : null;
+    debugLog(isDebug, `coverUrl final: ${coverUrl}`);
   } catch (err) {
     errorLog(isDebug, err, `Error obteniendo URL portada: ${err.message}`);
     coverUrl = null;
