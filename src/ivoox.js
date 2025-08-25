@@ -16,6 +16,14 @@ function page(pageNum, url) {
 function parseIvoox(isDebug, document) {
   const parsed = [];
   let elements; 
+  try { //portada
+    const img = document.querySelector("div.image-wrapper img");
+    const match = img.src.match(/[?&]url=([^&]+)/);
+    const coverUrl = match ? decodeURIComponent(match[1]) : null;
+  } catch (err) {
+    errorLog(isDebug, err, `Error obteniendo URL portada: ${err.message}`);
+    coverUrl = null;
+  }
   try {
     elements = document.querySelectorAll("div.pr-lg-4");
   } catch (err) {
@@ -50,17 +58,17 @@ function parseIvoox(isDebug, document) {
     } catch (err) {
       errorLog(isDebug, err, `Falló el selector de relativeDate = element.querySelector("span.text-gray").textContent.trim(): ${relativeDate}`);
     }
-    try { //premium y portada
+    try { //premium 
       const row = element.closest("div.d-flex.mb-3");
       const premiumBtn = row.querySelector(".round-play.btn-fans");
       premium = premiumBtn !== null;
     } catch (err) {
       errorLog(isDebug, err, `Falló el selector de premium: ${premium}`);
     }
-    try { //portada
+    /*try { //portada
       const row = element.closest("div.d-flex.mb-3");
       debugLog(isDebug, `row: ${row}`);
-      /*
+      
       const coverElement = row?.querySelector("img.img-hover");
       debugLog(isDebug, `coverElement: ${coverElement}`);
       debugLog(isDebug, `coverElement?.src: ${coverElement?.src}`);
@@ -73,9 +81,9 @@ function parseIvoox(isDebug, document) {
       } else {
         coverUrl = null;
         debugLog(isDebug, `Portada no encontrada para: ${title}`);
-      } */
+      }
       const coverElement = row?.querySelector("img.img-hover");
-      let rawSrc = coverElement?.getAttribute("src") || coverElement?.getAttribute("data-src");
+      let rawSrc = coverElement?.getAttribute("src") || coverElement?.getAttribute("data-src") || coverElement?.getAttribute("data-src");
       if (rawSrc) {
         debugLog(isDebug, `Imagen cruda encontrada: ${rawSrc}`);
         // Extraer lo que venga después de ?url= o &url=
@@ -89,7 +97,7 @@ function parseIvoox(isDebug, document) {
     } catch (err) {
       errorLog(isDebug, err, `Error obteniendo URL portada: ${err.message}`);
       coverUrl = null;
-    }
+    } */
     try { //descripción
       const descriptionElement = element.querySelector("div.description.mb-05");
       description = descriptionElement?.textContent?.trim() ?? null;
