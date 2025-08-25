@@ -59,12 +59,16 @@ function parseIvoox(isDebug, document) {
     }
     try { //portada
       const row = element.closest("div.d-flex.mb-3");
+      debugLog(isDebug, `row: ${row}`);
       const coverElement = row?.querySelector("img.img-hover");
+      debugLog(isDebug, `coverElement: ${coverElement}`);
+      debugLog(isDebug, `coverElement?.src: ${coverElement?.src}`);
       if (coverElement?.src) {
         debugLog(isDebug, `Imagen cruda encontrada: ${coverElement.src}`);
         // Si viene como https://img-static.ivoox.com/index.php?...&url=REAL
-        const match = coverElement.src.match(/[?&]url=([^&]+)/);
+        const match = coverElement?.src.match(/url=(https:\/\/static-1\.ivoox\.com\/.*?\.jpg)/);
         coverUrl = match ? decodeURIComponent(match[1]) : coverElement.src;
+        debugLog(isDebug, `coverUrl: ${coverUrl}`);
       } else {
         coverUrl = null;
         debugLog(isDebug, `Portada no encontrada para: ${title}`);
