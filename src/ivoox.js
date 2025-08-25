@@ -66,39 +66,6 @@ function parseIvoox(isDebug, document) {
     } catch (err) {
       errorLog(isDebug, err, `Falló el selector de premium: ${premium}`);
     }
-    /*try { //portada
-      const row = element.closest("div.d-flex.mb-3");
-      debugLog(isDebug, `row: ${row}`);
-      
-      const coverElement = row?.querySelector("img.img-hover");
-      debugLog(isDebug, `coverElement: ${coverElement}`);
-      debugLog(isDebug, `coverElement?.src: ${coverElement?.src}`);
-      if (coverElement?.src) {
-        debugLog(isDebug, `Imagen cruda encontrada: ${coverElement.src}`);
-        // Si viene como https://img-static.ivoox.com/index.php?...&url=REAL
-        const match = coverElement?.src.match(/url=(https:\/\/static-1\.ivoox\.com\/.*?\.jpg)/);
-        coverUrl = match ? decodeURIComponent(match[1]) : null;
-        debugLog(isDebug, `coverUrl: ${coverUrl}`);
-      } else {
-        coverUrl = null;
-        debugLog(isDebug, `Portada no encontrada para: ${title}`);
-      }
-      const coverElement = row?.querySelector("img.img-hover");
-      let rawSrc = coverElement?.getAttribute("src") || coverElement?.getAttribute("data-src") || coverElement?.getAttribute("data-src");
-      if (rawSrc) {
-        debugLog(isDebug, `Imagen cruda encontrada: ${rawSrc}`);
-        // Extraer lo que venga después de ?url= o &url=
-        const match = rawSrc.match(/[?&]url=([^&]+)/);
-        coverUrl = match ? decodeURIComponent(match[1]) : rawSrc;
-        debugLog(isDebug, `coverUrl final: ${coverUrl}`);
-      } else {
-        coverUrl = null;
-        debugLog(isDebug, `Portada no encontrada para: ${title}`);
-      }
-    } catch (err) {
-      errorLog(isDebug, err, `Error obteniendo URL portada: ${err.message}`);
-      coverUrl = null;
-    } */
     try { //descripción
       const descriptionElement = element.querySelector("div.description.mb-05");
       description = descriptionElement?.textContent?.trim() ?? null;

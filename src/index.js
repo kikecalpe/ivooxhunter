@@ -191,6 +191,31 @@ async function downloadEpisode(episode) {
 
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
 
+  if (fs.existsSync(filePath)) {
+    warnLog(`El archivo ya existe: ${fileName}`);
+
+    const { action } = await prompt.get({
+      properties: {
+        action: {
+          description: "¿Qué quieres hacer? (s = saltar, r = descargar de nuevo y reemplazar):",
+          default: "s",
+          type: "string",
+          required: true
+        }
+      }
+    });
+
+    if (action.toLowerCase() === "s") {
+      infoLog(`Saltando: ${fileName}`);
+      return;/*
+    } else if (action.toLowerCase() === "a") {
+      await updateTags(filePath, episode);
+      return;*/
+    } else if (action.toLowerCase() === "r") {
+      warnLog(`Descargando y reemplazando: ${fileName}`);
+    }
+  }
+  
   let attempts = 0;
   const maxAttempts = 3;
 
