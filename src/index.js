@@ -216,7 +216,7 @@ async function downloadEpisode(episode) {
   if (!fs.existsSync(coverPath) && episode.coverUrl) {
     debugLog(isDebug, `Portada no existe en ${coverPath}`);
     await downloadCoverImage(episode.coverUrl, coverPath);
-    infoLog(`Se descargo nueva portada de ${selectedPodcast} en ${coverPath}`);
+    infoLog(`Se descargo nueva portada en ${coverPath}`);
   }
 
   if (fs.existsSync(filePath)) {
