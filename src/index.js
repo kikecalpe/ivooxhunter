@@ -234,10 +234,10 @@ async function downloadEpisode(episode) {
 
     if (action.toLowerCase() === "s") {
       infoLog(`Saltando: ${fileName}`);
-      return;/*
+      return;
     } else if (action.toLowerCase() === "a") {
       await updateTags(filePath, episode);
-      return;*/
+      return;
     } else if (action.toLowerCase() === "r") {
       warnLog(`Descargando y reemplazando: ${fileName}`);
     }
