@@ -173,6 +173,33 @@ while (continueApp) {
   }
 }
 
+// Función para marcar las etiquetas id3 a los episodios
+async function setEpisodeTags(filePath, episode, podcastDir) {
+  const coverPath = path.join(config.downloadPath, podcastDir, "cover.jpg");
+  if (!fs.existsSync(coverPath) && episode.coverUrl) {
+    await downloadCoverImage(episode.coverUrl, coverPath);
+  }
+
+  const tags = {
+    title: episode.title,
+    artist: episode.podcast,
+    image: fs.existsSync(coverPath) ? coverPath : undefined,
+    comment: {
+      language: "es",
+      text: episode.description || ""
+    }
+  };
+  NodeID3.update(tags, filePath);
+}
+
+// Función para actualizar las etiquetas id3 a los episodios que ya están descargados.
+async function updateTags(filePath, episode) {
+  const podcastDir = sanitize(episode.podcast, { replacement: "_" });
+  await setEpisodeTags(filePath, episode, podcastDir);
+  infoLog(`Tags actualizados para: ${path.basename(filePath)}`);
+}
+
+
 // Función para descargar carátulas
 async function downloadCoverImage(url, tempPath) {
   const response = await axios({
@@ -197,7 +224,7 @@ async function downloadEpisode(episode) {
     const { action } = await prompt.get({
       properties: {
         action: {
-          description: "¿Qué quieres hacer? (s = saltar, r = descargar de nuevo y reemplazar):",
+          description: "¿Qué quieres hacer? (s = saltar, a = actualizar tags,  r = descargar de nuevo y reemplazar):",
           default: "s",
           type: "string",
           required: true
