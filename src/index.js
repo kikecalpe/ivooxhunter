@@ -173,32 +173,24 @@ while (continueApp) {
   }
 }
 
-// Función para marcar las etiquetas id3 a los episodios
-async function setEpisodeTags(filePath, episode, podcastDir) {
-  const coverPath = path.join(config.downloadPath, podcastDir, "cover.jpg");
-  if (!fs.existsSync(coverPath) && episode.coverUrl) {
-    await downloadCoverImage(episode.coverUrl, coverPath);
-  }
-
+// Función para actualizar los tags de un episodio ya descargado
+async function updateTags(filePath, episode, coverPath) {
   const tags = {
     title: episode.title,
     artist: episode.podcast,
-    image: fs.existsSync(coverPath) ? coverPath : undefined,
+    image: coverPath,
     comment: {
       language: "es",
       text: episode.description || ""
     }
   };
-  NodeID3.update(tags, filePath);
+  const success = NodeID3.update(tags, filePath);
+  if (success) {
+    infoLog(`Tags ID3 actualizados en: ${filePath}`);
+  } else {
+    warnLog(`No se pudieron actualizar los tags en: ${filePath}`);
+  }
 }
-
-// Función para actualizar las etiquetas id3 a los episodios que ya están descargados.
-async function updateTags(filePath, episode) {
-  const podcastDir = sanitize(episode.podcast, { replacement: "_" });
-  await setEpisodeTags(filePath, episode, podcastDir);
-  infoLog(`Tags actualizados para: ${path.basename(filePath)}`);
-}
-
 
 // Función para descargar carátulas
 async function downloadCoverImage(url, tempPath) {
@@ -218,6 +210,15 @@ async function downloadEpisode(episode) {
 
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
 
+  // Descargar portada si no existe
+  const coverPath = path.join(config.downloadPath, podcastDir, "cover.jpg");
+  debugLog(isDebug, `coverPath: ${coverPath}`);
+  if (!fs.existsSync(coverPath) && episode.coverUrl) {
+    debugLog(isDebug, `Portada no existe en ${coverPath}`);
+    await downloadCoverImage(episode.coverUrl, coverPath);
+    infoLog(`Se descargo nueva portada de ${selectedPodcast} en ${coverPath}`);
+  }
+
   if (fs.existsSync(filePath)) {
     warnLog(`El archivo ya existe: ${fileName}`);
 
@@ -236,10 +237,14 @@ async function downloadEpisode(episode) {
       infoLog(`Saltando: ${fileName}`);
       return;
     } else if (action.toLowerCase() === "a") {
+      if (!fs.existsSync(coverPath) && episode.coverUrl) {
+        await downloadCoverImage(episode.coverUrl, coverPath);
+      }
       await updateTags(filePath, episode);
       return;
     } else if (action.toLowerCase() === "r") {
       warnLog(`Descargando y reemplazando: ${fileName}`);
+      fs.unlinkSync(filePath); // eliminamos el anterior
     }
   }
   
@@ -262,29 +267,9 @@ async function downloadEpisode(episode) {
         writer.on("finish", resolve);
         writer.on("error", reject);
       });
-
-      // Descargar imagen de portada si no existe ya
-      const coverPath = path.join(config.downloadPath, podcastDir, "cover.jpg");
-      debugLog(isDebug, `coverPath: ${coverPath}`);
-      if (!fs.existsSync(coverPath)) {
-        debugLog(isDebug, `Portada no existe en ${coverPath}`);
-        if (episode.coverUrl) {
-          await downloadCoverImage(episode.coverUrl, coverPath);
-          infoLog(`Se descargo nueva portada de ${selectedPodcast} en ${coverPath}`);
-        }
-      }
       
-      // actualizar tags id3
-      const tags = {
-        title: episode.title,
-        artist: episode.podcast,
-        image: coverPath,
-        comment: {
-          language: "es",   // obligatorio para la estructura ID3
-          text: episode.description || ""
-        }
-      };
-      NodeID3.update(tags, filePath);
+      // Añadir tags al archivo nuevo
+      await updateTags(filePath, episode, coverPath);
       
       infoLog(`Descarga completada: ${fileName}`);
       return; 
