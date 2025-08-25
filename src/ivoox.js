@@ -15,11 +15,11 @@ function page(pageNum, url) {
 
 function parseIvoox(isDebug, document) {
   const parsed = [];
-  let elements; 
+  let elements, coverUrl; 
   try { //portada
     const img = document.querySelector("div.image-wrapper img");
     const match = img.src.match(/[?&]url=([^&]+)/);
-    const coverUrl = match ? decodeURIComponent(match[1]) : null;
+    coverUrl = match ? decodeURIComponent(match[1]) : null;
     debugLog(isDebug, `coverUrl final: ${coverUrl}`);
   } catch (err) {
     errorLog(isDebug, err, `Error obteniendo URL portada: ${err.message}`);
@@ -34,7 +34,7 @@ function parseIvoox(isDebug, document) {
   debugLog(isDebug, `Encontrados ${elements.length} episodios del podcast.`);
   
   elements.forEach(element => {
-    let titleElement, title, fileCode, url, relativeDate, premium, coverUrl, description;
+    let titleElement, title, fileCode, url, relativeDate, premium, description;
     try {  
       titleElement = element.querySelector("h3 a");
       if (!titleElement) debugLog(isDebug, "titleElement no encontrado");
