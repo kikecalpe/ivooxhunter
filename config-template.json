@@ -1,7 +1,7 @@
 {
   "downloadPath": "/storage/emulated/0/Podcasts",
   "requestWait": 1000,
-  "debug": true,
+  "debug": false,
   "podcasts":[
     {
       "name": "A Ciencia Cierta",
