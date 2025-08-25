@@ -4,193 +4,287 @@ import path from "path";
 import prompt from "prompt";
 import axios from "axios";
 import sanitize from "sanitize-filename";
+import NodeID3 from 'node-id3';
 import colors from "colors/safe.js";
 import ivoox from "./ivoox.js";
+import { debugLog, infoLog, warnLog, errorLog } from "./logger.js";
 
-const basePath = url.fileURLToPath(new URL("..", import.meta.url));
+
 let config = {};
-let podcasts = [];
-let episodes = [];
+let isDebug = true; //inicializamos según interese y luego leemos de config.json
+const basePath = url.fileURLToPath(new URL("..", import.meta.url));
+debugLog(isDebug, `basePath: ${basePath}`);
 
 prompt.start();
 prompt.message = "";
 prompt.delimiter = "";
 
-// Configure
-
+// Leer configuración
 const configUrl = path.join(basePath, "config.json");
-
+debugLog(isDebug, `configURl: ${configUrl}`);
 try {
   config = JSON.parse(fs.readFileSync(configUrl));
-} catch (e) {
-  console.log();
-  console.log("Archivo de configuración no encontrado.");
-  console.log()
+  // Leemos config.debug de config.json
+  isDebug = config.debug;
+  debugLog(isDebug, `config.isDebug: ${isDebug}\n`);
+} catch (err) {
+  errorLog(isDebug, err, "\nArchivo de configuración no encontrado.\n");
   process.exit(1);
 }
+debugLog(isDebug, `config.downloadPath: ${colors.green(config.downloadPath)}\n`);
 
-podcasts = config.podcasts;
+// mensajes log de ejemplo, borrar luego
+infoLog("Proceso iniciado correctamente");
+warnLog("Este es un aviso");
+try {
+  throw new Error("Algo salió mal");
+} catch (err) {
+  errorLog(isDebug, err, "Ocurrió un error mientras se descargaba el archivo");
+}
 
 if (!path.isAbsolute(config.downloadPath)) {
   config.downloadPath = path.join(basePath, config.downloadPath);
 }
 
-// Print script name
-
+// Mostrar nombre del script
 const packageJsonUrl = path.join(basePath, "package.json");
 const packageJson = JSON.parse(fs.readFileSync(packageJsonUrl));
+infoLog(`\n${packageJson.name} ${packageJson.version}\n`);
+infoLog(`Los episodios se descargarán en: ${colors.green(config.downloadPath)}\n`);
 
-console.log();
-console.log(`${ packageJson.name } ${ packageJson.version }`);
+let continueApp = true;
 
-// Print podcasts
+while (continueApp) {
+  let podcasts = config.podcasts;
+  console.log("Mis podcasts:\n");
 
-console.log();
-console.log("Mis podcasts:");
-console.log();
-
-const longestIndex = String(podcasts.length).length;
-
-for (const podcast of podcasts) {
-  const index = podcasts.indexOf(podcast) + 1;
-  const indexSpaces = ' '.repeat(longestIndex - String(index).length);
-  console.log(`  ${ indexSpaces }${ index }. ${ podcast.name }`);
-}
-
-const indexSpaces = ' '.repeat(longestIndex - 1);
-console.log(`  ${ indexSpaces }0. Todos`);
-
-// Ask podcast
-
-const { podcastNum } = await prompt.get({
-  properties: {
-    podcastNum: {
-      description: "\n¿Que podcast quieres consultar?",
-      default: 0,
-      type: "integer"
-    }
-  }
-});
-
-// Filter podcasts
-
-if (podcastNum) {
-  podcasts = [podcasts[podcastNum - 1]];
-}
-
-// Ask days
-
-const { days } = await prompt.get({
-  properties: {
-    days: {
-      description: "\n¿Cuantos días quieres consultar?",
-      default: 14,
-      type: "integer"
-    }
-  }
-});
-
-// Get episodes data
-
-console.log();
-console.log("Consultando...");
-
-for (const podcast of podcasts) {
-
-  if (podcasts.indexOf(podcast) > 0) {
-    await new Promise(resolve => setTimeout(resolve, config.requestWait));
-  }
-
-  const podcastEpisodes = await ivoox.getEpisodes(podcast.url, days, config.requestWait);
-  podcastEpisodes.forEach(episode => {
-    episode.podcast = podcast.name;
+  const longestIndex = String(podcasts.length).length;
+  podcasts.forEach((podcast, idx) => {
+    const indexSpaces = ' '.repeat(longestIndex - String(idx + 1).length);
+    console.log(`  ${indexSpaces}${idx + 1}. ${podcast.name}`);
   });
 
-  Array.prototype.push.apply(episodes, podcastEpisodes);
+  const indexSpaces = ' '.repeat(longestIndex - 1);
+  console.log(`  ${indexSpaces}0. Salir`);
 
-}
+  const { podcastNum } = await prompt.get({
+    properties: {
+      podcastNum: {
+        description: "\n¿Qué podcast quieres consultar?",
+        default: 0,
+        type: "integer"
+      }
+    }
+  });
 
-episodes.sort((a, b) => {
-  if (a.date > b.date) return -1;
-  if (a.date < b.date) return  1;
-  return 0;
-});
-
-// Print episodes
-
-function removeTime(date) {
-  date.setHours(0);
-  date.setMinutes(0);
-  date.setSeconds(0);
-  date.setMilliseconds(0);
-  return new Date(date - date.getTimezoneOffset() * 60 * 1000);
-}
-
-const repTitleSpaces = String(episodes.length).length + 2;
-const titleSpaces = ' '.repeat(repTitleSpaces);
-
-const today = removeTime(new Date());
-
-for (const episode of episodes) {
-  const index = episodes.indexOf(episode) + 1;
-  const repIndexSpaces = repTitleSpaces - 2 - String(index).length;
-  const indexSpaces = ' '.repeat(repIndexSpaces);
-
-  const numDays = (today - removeTime(episode.date)) / 1000 / 60 / 60 / 24;
-  const numDaysText = numDays === 1 ? "día" : "días";
-
-  console.log();
-  console.log(`  ${ indexSpaces }${ index }. ${ episode.podcast } (${ numDays } ${ numDaysText })`);
-  if (episode.premium) {
-    console.log(`  ${ titleSpaces }${ colors.red("[PREMIUM]") } ${ episode.title }`);
-  } else {
-    console.log(`  ${ titleSpaces }${ episode.title }`);
+  if (podcastNum === 0) {
+    infoLog("\nSaliendo...\n");
+    break;
   }
-}
 
-// Ask episodes to download
+  const selectedPodcast = podcasts[podcastNum - 1];
+  let currentPage = selectedPodcast.url;
+  let episodes = [];
+  let morePages = true;
 
-const { episodesDownloadStr } = await prompt.get({
-  properties: {
-    episodesDownloadStr: {
-      description: "\n¿Que episodios quieres descargar?, usa espacios para separarlos:",
-      type: "string"
+  while (morePages) {
+    infoLog(`\nConsultando: ${selectedPodcast.name}\n`);
+    const newEpisodes = await ivoox.getEpisodes(isDebug, currentPage, null, config.requestWait);
+
+    if (newEpisodes.length === 0) {
+      warnLog("\nNo se encontraron episodios.\n");
+      break;
+    }
+
+    newEpisodes.forEach(ep => ep.podcast = selectedPodcast.name);
+    episodes = episodes.concat(newEpisodes);
+
+    // Mostrar episodios
+    episodes.forEach((episode, idx) => {
+      const title = episode.title;
+      const premiumMark = episode.premium ? colors.red("[PREMIUM] ") : "";
+      console.log(`  ${String(idx + 1).padStart(2, " ")}. ${premiumMark}${title} (${episode.dateRelative})`);
+    });
+
+    // Preguntar qué hacer
+    const { action } = await prompt.get({
+      properties: {
+        action: {
+          description: 
+            "\n\x1b[97mIntroduce números para descargar separados por espacios (ej: 1 3 5)\x1b[0m, " +
+            "para \x1b[97msiguiente\x1b[0m página pulsa \x1b[97m(s)\x1b[0m, " +
+            "para ver \x1b[97motro\x1b[0m podcast pulsa \x1b[97m(o)\x1b[0m, " +
+            "para \x1b[97msalir\x1b[0m pulsa \x1b[97m(x)\x1b[0m:",
+          default: "x",
+          type: "string",
+          required: true
+        }
+      }
+    });
+
+    if (action.toLowerCase() === "x") {
+      morePages = false;
+      continueApp = false;
+      break;
+    } else if (action.toLowerCase() === "o") {
+      break;
+    } else if (action.toLowerCase() === "s") {
+      currentPage = await ivoox.page("next", currentPage);
+      if (!currentPage) {
+        warnLog("\nNo hay más páginas disponibles.");
+        morePages = false;
+      }
+    } else {
+      // Descargar episodios seleccionados
+      const selectedIndexes = action.split(" ")
+        .map(n => parseInt(n))
+        .filter(n => !isNaN(n) && n > 0 && n <= episodes.length);
+
+      for (const idx of selectedIndexes) {
+        const episode = episodes[idx - 1];
+        debugLog(isDebug, "Episodio a descargar:", episode);
+        await downloadEpisode(episode);
+      }
+
+      // Preguntar si continuar en la misma página
+      const { nextAction } = await prompt.get({
+        properties: {
+          nextAction: {
+            description: 
+              "\n\x1b[97mPara descargar \x1b[97mmás\x1b[0m de esta página pulsa \x1b[97m(m)\x1b[0m, " +
+              "para pasar a la \x1b[97msiguiente\x1b[0m página pulsa \x1b[97m(s)\x1b[0m, " +
+              "para ver \x1b[97motro\x1b[0m podcast pulsa \x1b[97m(o)\x1b[0m, " +
+              "para \x1b[97msalir\x1b[0m pulsa \x1b[97m(x)\x1b[0m?",
+            default: "x",
+            type: "string"
+          }
+        }
+      });
+
+      if (nextAction.toLowerCase() === "x") {
+        morePages = false;
+        continueApp = false;
+      } else if (nextAction.toLowerCase() === "o") {
+        morePages = false;
+      } else if (nextAction.toLowerCase() === "s") {
+        currentPage = await ivoox.page("next", currentPage);
+      }
     }
   }
-});
+}
 
-episodes = episodesDownloadStr.split(" ").map(episodeNum => episodes[Number(episodeNum) - 1]);
+// Función para actualizar los tags de un episodio ya descargado
+async function updateTags(filePath, episode, coverPath) {
+  const tags = {
+    title: episode.title,
+    artist: episode.podcast,
+    image: coverPath,
+    comment: {
+      language: "es",
+      text: episode.description || ""
+    }
+  };
+  const success = NodeID3.update(tags, filePath);
+  if (success) {
+    infoLog(`Tags ID3 actualizados en: ${filePath}`);
+  } else {
+    warnLog(`No se pudieron actualizar los tags en: ${filePath}`);
+  }
+}
 
-// Download episodes
+// Función para descargar carátulas
+async function downloadCoverImage(url, tempPath) {
+  const response = await axios({
+    url,
+    method: "GET",
+    responseType: "arraybuffer"
+  });
+  fs.writeFileSync(tempPath, response.data);
+}
 
-console.log();
-
+// Función para descargar un episodio
 async function downloadEpisode(episode) {
-  const fileName = sanitize(episode.title, {replacement: "_"}).concat(".mp3");
-  const podcastDir = sanitize(episode.podcast, {replacement: "_"});
+  const fileName = sanitize(episode.title, { replacement: "_" }) + ".mp3";
+  const podcastDir = sanitize(episode.podcast, { replacement: "_" });
   const filePath = path.join(config.downloadPath, podcastDir, fileName);
 
-  fs.mkdirSync(path.dirname(filePath), {recursive: true});
-  const writer = fs.createWriteStream(filePath);
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
 
-  const response = await axios({
-    url: episode.url,
-    method: "GET",
-    responseType: "stream"
-  });
+  // Descargar portada si no existe
+  const coverPath = path.join(config.downloadPath, podcastDir, "cover.jpg");
+  debugLog(isDebug, `coverPath: ${coverPath}`);
+  if (!fs.existsSync(coverPath) && episode.coverUrl) {
+    debugLog(isDebug, `Portada no existe en ${coverPath}`);
+    await downloadCoverImage(episode.coverUrl, coverPath);
+    infoLog(`Se descargo nueva portada en ${coverPath}`);
+  }
 
-  response.data.pipe(writer);
+  if (fs.existsSync(filePath)) {
+    warnLog(`El archivo ya existe: ${fileName}`);
 
-  return new Promise((resolve, reject) => {
-    writer.on("finish", resolve);
-    writer.on("error", reject);
-  });
+    const { action } = await prompt.get({
+      properties: {
+        action: {
+          description: "¿Qué quieres hacer? (s = saltar, a = actualizar tags,  r = descargar de nuevo y reemplazar):",
+          default: "s",
+          type: "string",
+          required: true
+        }
+      }
+    });
+
+    if (action.toLowerCase() === "s") {
+      infoLog(`Saltando: ${fileName}`);
+      return;
+    } else if (action.toLowerCase() === "a") {
+      if (!fs.existsSync(coverPath) && episode.coverUrl) {
+        await downloadCoverImage(episode.coverUrl, coverPath);
+      }
+      await updateTags(filePath, episode);
+      return;
+    } else if (action.toLowerCase() === "r") {
+      warnLog(`Descargando y reemplazando: ${fileName}`);
+      fs.unlinkSync(filePath); // eliminamos el anterior
+    }
+  }
+  
+  let attempts = 0;
+  const maxAttempts = 3;
+
+  while (attempts < maxAttempts) {
+    try {
+      const response = await axios({
+        url: episode.url,
+        method: "GET",
+        responseType: "stream",
+        timeout: 15000 // 15s por intento
+      });
+
+      const writer = fs.createWriteStream(filePath);
+      response.data.pipe(writer);
+
+      await new Promise((resolve, reject) => {
+        writer.on("finish", resolve);
+        writer.on("error", reject);
+      });
+      
+      // Añadir tags al archivo nuevo
+      await updateTags(filePath, episode, coverPath);
+      
+      infoLog(`Descarga completada: ${fileName}`);
+      return; 
+
+    } catch (error) {
+      attempts++;
+      errorLog(isDebug, error, `Error descargando "${episode.title}" (intento ${attempts}/${maxAttempts})`);
+      if (attempts < maxAttempts) {
+        warnLog("Reintentando en 20 segundos...");
+        await new Promise(res => setTimeout(res, 20000));
+      } else {
+        errorLog(isDebug, error, `Falló la descarga de: ${fileName}. Se salta este episodio.`);
+      }
+    }
+  }
 }
 
-for (const episode of episodes) {
-  console.log(`Descargando... ${ episodes.indexOf(episode) + 1 }/${ episodes.length }`);
-  await downloadEpisode(episode);
-}
 
-console.log("Descarga terminada");
-console.log();

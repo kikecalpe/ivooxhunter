@@ -1,9 +1,7 @@
 import axios from "axios";
 import jsdom from "jsdom";
-
-const reDate = /^(\d{2}):(\d{2}) - (\d{2}) de (\w{3})\. de (\d{4})$/;
-const months = ["ene", "feb", "mar", "abr", "may", "jun",
-                "jul", "ago", "sep", "oct", "nov", "dic"];
+import https from "https";
+import { debugLog, infoLog, warnLog, errorLog } from "./logger.js";
 
 function page(pageNum, url) {
   const splitUrl = url.split("_");
@@ -15,51 +13,100 @@ function page(pageNum, url) {
   return splitUrl.join("_");
 }
 
-function parseIvoox(document) {
+function parseIvoox(isDebug, document) {
   const parsed = [];
-  document
-    .querySelectorAll("div.modulo-type-episodio")
-    .forEach(element => {
-      const titleElement = element.querySelector(".content .title-wrapper a");
-      const title = titleElement.textContent.trim();
-      const fileCode = titleElement.href.split("_")[2];
-      const url = `http://ivoox.com/listen_mn_${ fileCode }_1.mp3`;
-      const splitDate = element.querySelector(".content .action .date")
-                               .title.match(reDate);
-      const date = new Date(
-        splitDate[5],
-        months.indexOf(splitDate[4]),
-        splitDate[3],
-        splitDate[1],
-        splitDate[2]
-      );
-      const premiumElement = element.querySelector(".content .title-wrapper .fan-title");
-      const premium = premiumElement === null ? false : true;
-      parsed.push({title, url, date, premium});
-    });
+  let elements, coverUrl; 
+  try { //portada
+    const img = document.querySelector("div.image-wrapper img");
+    const match = img.src.match(/[?&]url=([^&]+)/);
+    coverUrl = match ? decodeURIComponent(match[1]) : null;
+    debugLog(isDebug, `coverUrl final: ${coverUrl}`);
+  } catch (err) {
+    errorLog(isDebug, err, `Error obteniendo URL portada: ${err.message}`);
+    coverUrl = null;
+  }
+  try {
+    elements = document.querySelectorAll("div.pr-lg-4");
+  } catch (err) {
+    errorLog(isDebug, err, `Falló el selector de elements = document.querySelectorAll("div.pr-lg-4"): ${elements}`);
+    elements = []; // Evitar que rompa más abajo
+  }
+  debugLog(isDebug, `Encontrados ${elements.length} episodios del podcast.`);
+  
+  elements.forEach(element => {
+    let titleElement, title, fileCode, url, relativeDate, premium, description;
+    try {  
+      titleElement = element.querySelector("h3 a");
+      if (!titleElement) debugLog(isDebug, "titleElement no encontrado");
+    } catch (err) {
+      errorLog(isDebug, err, `Falló el selector de titleElement = element.querySelector("h3 a"): ${titleElement}`);
+    }
+  
+    try { //título y código
+      title = titleElement.textContent.trim();
+      fileCode = titleElement.href.split("_")[2];
+      if (!fileCode) debugLog(isDebug, `fileCode no encontrado en href: ${titleElement.href}`);
+    } catch (err) {
+      errorLog(isDebug, err, `Falló el selector de title: ${title} o la operación para obtener el filecode: ${filecode}`);
+    }
+
+    url = `http://ivoox.com/listen_mn_${fileCode}_1.mp3`;
+    if (!url) debugLog(isDebug, `mp3 url: ${url}`);
+
+    try { //fecha
+      relativeDate = element.querySelector("span.text-gray").textContent.trim();
+      if (!relativeDate) debugLog(isDebug, `relativeDate no encontrado para ${title}`);
+    } catch (err) {
+      errorLog(isDebug, err, `Falló el selector de relativeDate = element.querySelector("span.text-gray").textContent.trim(): ${relativeDate}`);
+    }
+    try { //premium 
+      const row = element.closest("div.d-flex.mb-3");
+      const premiumBtn = row.querySelector(".round-play.btn-fans");
+      premium = premiumBtn !== null;
+    } catch (err) {
+      errorLog(isDebug, err, `Falló el selector de premium: ${premium}`);
+    }
+    try { //descripción
+      const descriptionElement = element.querySelector("div.description.mb-05");
+      description = descriptionElement?.textContent?.trim() ?? null;
+      if (!description) debugLog(isDebug, `Descripción no encontrada para: ${title}`);
+    } catch (err) {
+      errorLog(isDebug, err, `Error obteniendo descripción: ${err.message}`);
+      description = null;
+    }
+
+
+    parsed.push({ title, url, relativeDate, premium, coverUrl, description });
+  });
+
+  debugLog(isDebug, `Se parsearon ${parsed.length} episodios`);
   return parsed;
 }
 
-async function getEpisodes(url, date, requestWait = 2000, next = false) {
-  if (!next) url = page(1, url);
-  if (typeof date === "number") {
-    date = new Date(Date.now() - (date * 24 * 60 * 60 * 1000));
-  }
-  const episodes = [];
 
-  const response = await axios.get(url);
-  const dom = new jsdom.JSDOM(response.data);
-  const pageEpisodes = parseIvoox(dom.window.document);
-  const filteredEpisodes = pageEpisodes.filter(episode => episode.date > date);
-  
-  Array.prototype.push.apply(episodes, filteredEpisodes);
-  
-  if (pageEpisodes.length === filteredEpisodes.length) {
-    await new Promise(resolve => setTimeout(resolve, requestWait));
-    Array.prototype.push.apply(episodes, await getEpisodes(page("next", url), date, requestWait, true));
+
+async function getEpisodes(isDebug, url, date) {
+  try {
+    const response = await axios.get(url, {
+      timeout: 20000, // máximo 20 segundos
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+        "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
+      },
+    });
+
+    const dom = new jsdom.JSDOM(response.data);
+    const document = dom.window.document;
+
+    // usamos tu parser
+    const pageEpisodes = parseIvoox(isDebug, document);
+
+    return pageEpisodes;
+  } catch (err) {
+    errorLog(isDebug, err, "Error al consultar Ivoox:");
+    return [];
   }
-  
-  return episodes;
 }
 
-export default { getEpisodes };
+export default { getEpisodes, page, };

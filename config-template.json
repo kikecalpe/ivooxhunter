@@ -1,10 +1,23 @@
 {
-  "downloadPath": "podcasts",
+  "downloadPath": "/storage/emulated/0/Podcasts",
   "requestWait": 1000,
+  "debug": false,
   "podcasts":[
     {
       "name": "A Ciencia Cierta",
       "url": "https://www.ivoox.com/podcast-a-ciencia-cierta_sq_f1286369_1.html"
+    },
+    {
+      "name": "Coffee Break: Señal y Ruido",
+      "url": "https://www.ivoox.com/podcast-coffee-break-senal-ruido_sq_f1172891_1.html"
+    },
+    {
+      "name": "La Fábrica de la Ciencia (LFDLC)",
+      "url": "https://www.ivoox.com/podcast-fabrica-ciencia-lfdlc_sq_f1100722_1.html"
+    },
+    {
+      "name": "Noviembre Nocturno",
+      "url": "https://www.ivoox.com/podcast-noviembre-nocturno_sq_f111421_1.html"
     },
     {
       "name": "Web Reactiva",
